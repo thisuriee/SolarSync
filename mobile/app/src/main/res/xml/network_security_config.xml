@@ -1,9 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  File:    network_security_config.xml
+  Author:  Dahami
+  Created: 2026-09-19
+  Purpose: Android 9+ blocks cleartext HTTP by default. The IIS API is served
+           over plain HTTP on the LAN, so cleartext is permitted for the
+           emulator's host alias and the IIS machine only. Everything else
+           stays HTTPS-only. Update the LAN IP here when the IIS box's
+           address changes (see docs/deployment-iis.md).
+-->
 <network-security-config>
-    <!-- Cleartext HTTP allowed only for the dev host alias and the IIS box.
-         Everything else stays HTTPS-only. -->
     <domain-config cleartextTrafficPermitted="true">
+        <!-- Emulator alias for the host machine's loopback -->
         <domain includeSubdomains="false">10.0.2.2</domain>
+        <!-- IIS machine on the LAN -->
         <domain includeSubdomains="false">172.22.243.99</domain>
+        <!-- Local dev over a real device on the same LAN -->
+        <domain includeSubdomains="false">localhost</domain>
     </domain-config>
 </network-security-config>
