@@ -62,6 +62,7 @@ public class QrFlowTests : IDisposable
             new ReservationRepository(_reservations),
             new UserRepository(users),
             new StationRepository(stations),
+            new VerificationStore(),
             Options.Create(new QrSettings { TokenExpiryHours = 2, VerificationIdExpiryMinutes = 5 }));
 
         // Two real Active prosumers and one real Active station, so the tests do

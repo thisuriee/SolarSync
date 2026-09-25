@@ -5,7 +5,6 @@
 // Purpose:          Implementation of the QR fulfilment vertical — issues a
 //                   single-use QR token for an approved reservation.
 // -----------------------------------------------------------------------------
-using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.WebUtilities;
@@ -22,21 +21,20 @@ public class QrService : IQrService
     private readonly IReservationRepository _reservationRepository;
     private readonly IUserRepository _userRepository;
     private readonly IStationRepository _stationRepository;
+    private readonly VerificationStore _verificationStore;
     private readonly IOptions<QrSettings> _qrSettings;
-
-    // verificationId -> (reservationId, expiry). Populated by VerifyQrToken and
-    // read by CompleteReservation in a later commit.
-    private readonly ConcurrentDictionary<string, (string ReservationId, DateTime ExpiresAt)> _verificationStore = new();
 
     public QrService(
         IReservationRepository reservationRepository,
         IUserRepository userRepository,
         IStationRepository stationRepository,
+        VerificationStore verificationStore,
         IOptions<QrSettings> qrSettings)
     {
         _reservationRepository = reservationRepository;
         _userRepository = userRepository;
         _stationRepository = stationRepository;
+        _verificationStore = verificationStore;
         _qrSettings = qrSettings;
     }
 
@@ -131,7 +129,7 @@ public class QrService : IQrService
         string verificationId = GenerateSecureToken();
         DateTime verificationExpiresAt = DateTime.UtcNow
             .AddMinutes(_qrSettings.Value.VerificationIdExpiryMinutes);
-        _verificationStore[verificationId] = (reservation.Id, verificationExpiresAt);
+        _verificationStore.Add(verificationId, reservation.Id, verificationExpiresAt);
 
         var prosumer = await _userRepository.FindByNic(reservation.ProsumerNIC);
         var station = await _stationRepository.FindById(reservation.StationId);
@@ -165,8 +163,7 @@ public class QrService : IQrService
                 400);
         }
 
-        if (!_verificationStore.TryGetValue(verificationId, out var verification)
-            || verification.ReservationId != reservationId)
+        if (!_verificationStore.TryGet(verificationId, reservationId, out var verificationExpiresAt))
         {
             throw new BusinessRuleException(
                 "VERIFICATION_INVALID",
@@ -175,9 +172,9 @@ public class QrService : IQrService
                 400);
         }
 
-        if (verification.ExpiresAt < DateTime.UtcNow)
+        if (verificationExpiresAt < DateTime.UtcNow)
         {
-            _verificationStore.TryRemove(verificationId, out _);
+            _verificationStore.Remove(verificationId);
 
             throw new BusinessRuleException(
                 "VERIFICATION_EXPIRED",
@@ -200,7 +197,7 @@ public class QrService : IQrService
         await _reservationRepository.MarkCompleted(reservationId, operatorId, DateTime.UtcNow);
 
         // Single-use: the verificationId cannot be presented again.
-        _verificationStore.TryRemove(verificationId, out _);
+        _verificationStore.Remove(verificationId);
     }
 
     // Generates a 32-byte cryptographically random token and encodes it as a

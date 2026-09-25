@@ -10,11 +10,13 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi;
 using MongoDB.Driver;
 using SmartSolar.Api.Configuration;
 using SmartSolar.Api.Helpers;
 using SmartSolar.Api.Middleware;
 using SmartSolar.Api.Repositories;
+using SmartSolar.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -33,6 +35,20 @@ BsonConventions.Register();
 builder.Services.AddSingleton<IMongoClient>(sp =>
     new MongoClient(sp.GetRequiredService<IOptions<MongoSettings>>().Value.ConnectionString));
 builder.Services.AddSingleton<MongoContext>();
+
+// ---- §1 Repositories and services. Each repository takes its collection from
+// MongoContext, so the collection names live in exactly one place.
+builder.Services.AddScoped<IReservationRepository>(sp =>
+    new ReservationRepository(sp.GetRequiredService<MongoContext>().Reservations));
+builder.Services.AddScoped<IUserRepository>(sp =>
+    new UserRepository(sp.GetRequiredService<MongoContext>().Users));
+builder.Services.AddScoped<IStationRepository>(sp =>
+    new StationRepository(sp.GetRequiredService<MongoContext>().Stations));
+builder.Services.AddScoped<IQrService, QrService>();
+
+// Singleton: the scan-to-complete handshake spans two requests, so the store
+// must outlive a single scoped QrService instance.
+builder.Services.AddSingleton<VerificationStore>();
 
 // ---- §4 JWT bearer authentication
 var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>()
@@ -80,10 +96,37 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddControllers();
 
+// ---- Swagger with a Bearer scheme, so a JWT can be pasted into the UI and
+// the [Authorize] attributes on the QR endpoints can be exercised. Dev only.
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo { Title = "SmartSolar API", Version = "v1" });
+
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Paste the JWT only. Swagger adds the 'Bearer ' prefix."
+    });
+
+    // Swashbuckle 10 resolves the scheme reference against the document, so the
+    // requirement is supplied as a factory rather than a fixed object.
+    options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
+    {
+        { new OpenApiSecuritySchemeReference("Bearer", document), new List<string>() }
+    });
+});
+
 var app = builder.Build();
 
 // ---- Pipeline order (docs/PLUMBING-GUIDE.md). Do not reorder.
 app.UseMiddleware<ExceptionHandlingMiddleware>();   // §2 first — catches everything downstream
+app.UseSwagger();
+app.UseSwaggerUI();
 app.UseCors(CorsPolicyName);
 app.UseAuthentication();
 app.UseMiddleware<MethodOverrideMiddleware>();      // §3 after auth (User populated), before routing
