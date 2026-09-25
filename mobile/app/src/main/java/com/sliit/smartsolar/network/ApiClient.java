@@ -121,7 +121,7 @@ public final class ApiClient {
             return;
         }
 
-        ErrorParser.ErrorInfo error = ErrorParser.parse(result.body);
+        ErrorParser.ErrorInfo error = ErrorParser.parse(result.body, result.statusCode);
         callback.onError(error.code, error.detail);
     }
 
