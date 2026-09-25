@@ -1,3 +1,14 @@
 <resources>
     <string name="app_name">SmaerSolar</string>
+
+    <string name="qr_bookings_title">Approved bookings</string>
+    <string name="qr_loading">Loading bookings…</string>
+    <string name="qr_empty">No approved bookings yet.</string>
+    <string name="qr_create_hint">Reserve a slot, then wait for a Grid Operator to approve it.</string>
+    <string name="qr_token_title">Transaction QR</string>
+    <string name="qr_preparing">Fetching QR code…</string>
+    <string name="qr_unreadable">The server did not return a QR code. Please try again.</string>
+    <string name="qr_expires">Valid until %1$s</string>
+    <string name="qr_back">Back to list</string>
+    <string name="qr_slot">%1$s – %2$s</string>
 </resources>

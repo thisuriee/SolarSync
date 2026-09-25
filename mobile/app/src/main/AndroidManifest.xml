@@ -25,6 +25,12 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".activities.QrDisplayActivity"
+            android:exported="false"
+            android:label="@string/qr_bookings_title"
+            android:parentActivityName=".MainActivity" />
+
         <!-- Maps key read from local.properties. An unregistered SHA-1 produces
              a grey map with no error dialog, so every member's debug fingerprint
              must be registered against this key. -->
