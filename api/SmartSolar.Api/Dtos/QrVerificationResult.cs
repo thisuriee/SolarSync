@@ -6,24 +6,21 @@
 //                   details the operator confirms on screen, plus the
 //                   short-lived verificationId that authorises completion.
 // -----------------------------------------------------------------------------
+using SmartSolar.Api.Models;
+
 namespace SmartSolar.Api.Dtos;
 
 public class QrVerificationResult
 {
-    public string ReservationId { get; set; } = string.Empty;
-    public string ProsumerNic { get; set; } = string.Empty;
-    public string ProsumerName { get; set; } = string.Empty;
-    public string StationId { get; set; } = string.Empty;
-    public string StationName { get; set; } = string.Empty;
+    // The reservation being fulfilled; only ever returned in its Approved state.
+    public Reservation Reservation { get; set; } = new();
 
-    // UTC booking window the operator is confirming.
-    public DateTime SlotStart { get; set; }
-    public DateTime SlotEnd { get; set; }
+    // The prosumer who owns the reservation, resolved from the reservation's NIC.
+    public User Prosumer { get; set; } = new();
 
-    public double EnergyKWh { get; set; }
+    // The microgrid node the energy transfer takes place at.
+    public SolarStation Station { get; set; } = new();
 
-    // Single-use proof that a scan happened. Valid for
-    // QrSettings.VerificationIdExpiryMinutes and required by CompleteReservation.
+    // Single-use proof that the QR was scanned; required by CompleteReservation.
     public string VerificationId { get; set; } = string.Empty;
-    public DateTime VerificationExpiresAt { get; set; }
 }

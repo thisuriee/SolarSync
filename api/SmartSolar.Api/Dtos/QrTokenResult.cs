@@ -9,9 +9,9 @@ namespace SmartSolar.Api.Dtos;
 
 public class QrTokenResult
 {
-    // Plaintext token rendered as the QR code. Only its SHA-256 hash is stored.
+    // Plaintext token rendered as the QR code; only its SHA-256 hash is persisted.
     public string Token { get; set; } = string.Empty;
 
-    // UTC expiry of the token: slotEnd + QrSettings.TokenExpiryHours.
+    // UTC expiry of the token, computed as slotEnd + QrSettings.TokenExpiryHours.
     public DateTime ExpiresAt { get; set; }
 }
