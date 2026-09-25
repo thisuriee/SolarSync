@@ -17,6 +17,10 @@ public class MainActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
+        // Must run before any screen issues a request: ApiClient reads the bearer
+        // token from the local session row on every call.
+        com.sliit.smartsolar.network.ApiClient.init(getApplicationContext());
+
         ViewCompat.setOnApplyWindowInsetsListener(
                 findViewById(R.id.main),
                 (v, insets) -> {
