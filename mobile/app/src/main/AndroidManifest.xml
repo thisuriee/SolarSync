@@ -24,6 +24,13 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Maps key read from local.properties. An unregistered SHA-1 produces
+             a grey map with no error dialog, so every member's debug fingerprint
+             must be registered against this key. -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="${MAPS_API_KEY}" />
     </application>
 
 </manifest>
