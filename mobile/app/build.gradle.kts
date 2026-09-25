@@ -61,6 +61,10 @@ dependencies {
     implementation(libs.material)
     implementation(libs.activity)
     implementation(libs.constraintlayout)
+
+    // QR encoding only. Scanning (operator mode) needs a camera-backed library,
+    // which is a separate decision.
+    implementation(libs.zxing.core)
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
