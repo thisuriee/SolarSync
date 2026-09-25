@@ -16,6 +16,7 @@ using SmartSolar.Api.Configuration;
 using SmartSolar.Api.Helpers;
 using SmartSolar.Api.Middleware;
 using SmartSolar.Api.Repositories;
+using SmartSolar.Api.Settings;
 
 var builder = WebApplication.CreateBuilder(args);
 
