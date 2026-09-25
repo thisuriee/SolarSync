@@ -151,9 +151,57 @@ public class QrService : IQrService
         };
     }
 
-    // Finalises the energy transfer. Next commit.
-    public Task CompleteReservation(string reservationId, string verificationId, string operatorId)
-        => throw new NotImplementedException();
+    // Finalises the energy transfer: the verificationId must be live and tied to
+    // this reservation, and the reservation must still be Approved. The entry is
+    // consumed on success, so a repeat call fails the verification check.
+    public async Task CompleteReservation(string reservationId, string verificationId, string operatorId)
+    {
+        if (string.IsNullOrWhiteSpace(verificationId))
+        {
+            throw new BusinessRuleException(
+                "VERIFICATION_INVALID",
+                "Verification invalid",
+                "The verification session is invalid. Please scan the QR code again.",
+                400);
+        }
+
+        if (!_verificationStore.TryGetValue(verificationId, out var verification)
+            || verification.ReservationId != reservationId)
+        {
+            throw new BusinessRuleException(
+                "VERIFICATION_INVALID",
+                "Verification invalid",
+                "The verification session is invalid. Please scan the QR code again.",
+                400);
+        }
+
+        if (verification.ExpiresAt < DateTime.UtcNow)
+        {
+            _verificationStore.TryRemove(verificationId, out _);
+
+            throw new BusinessRuleException(
+                "VERIFICATION_EXPIRED",
+                "Verification expired",
+                "The verification session has expired. Please scan the QR code again.",
+                410);
+        }
+
+        var reservation = await _reservationRepository.FindReservationById(reservationId);
+
+        if (reservation == null || reservation.Status != "Approved")
+        {
+            throw new BusinessRuleException(
+                "RESERVATION_INVALID_STATE",
+                "Invalid reservation state",
+                "This reservation is no longer in an approved state.",
+                409);
+        }
+
+        await _reservationRepository.MarkCompleted(reservationId, operatorId, DateTime.UtcNow);
+
+        // Single-use: the verificationId cannot be presented again.
+        _verificationStore.TryRemove(verificationId, out _);
+    }
 
     // Generates a 32-byte cryptographically random token and encodes it as a
     // URL-safe string, so it can be embedded in a QR payload without escaping.

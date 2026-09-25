@@ -44,4 +44,16 @@ public class ReservationRepository : IReservationRepository
 
         await _reservations.UpdateOneAsync(filter, update);
     }
+
+    // Sets Status, VerifiedByOperatorId and CompletedAt — the completion write.
+    public async Task MarkCompleted(string id, string operatorId, DateTime completedAt)
+    {
+        var filter = Builders<Reservation>.Filter.Eq(r => r.Id, id);
+        var update = Builders<Reservation>.Update
+            .Set(r => r.Status, "Completed")
+            .Set(r => r.VerifiedByOperatorId, operatorId)
+            .Set(r => r.CompletedAt, completedAt);
+
+        await _reservations.UpdateOneAsync(filter, update);
+    }
 }

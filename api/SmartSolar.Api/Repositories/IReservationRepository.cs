@@ -19,4 +19,7 @@ public interface IReservationRepository
 
     // Writes the issued QR token hash and its validity window onto a reservation.
     Task UpdateQrFields(string id, string qrTokenHash, DateTime qrIssuedAt, DateTime qrExpiresAt);
+
+    // Marks the reservation completed, recording the operator and the timestamp.
+    Task MarkCompleted(string id, string operatorId, DateTime completedAt);
 }
