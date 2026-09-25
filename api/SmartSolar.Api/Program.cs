@@ -10,7 +10,6 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using MongoDB.Bson.Serialization.Conventions;
 using MongoDB.Driver;
 using SmartSolar.Api.Configuration;
 using SmartSolar.Api.Helpers;
@@ -24,16 +23,10 @@ builder.Services.Configure<MongoSettings>(builder.Configuration.GetSection("Mong
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSettings"));
 builder.Services.Configure<QrSettings>(builder.Configuration.GetSection("QrSettings"));
 
-// ---- §1 Global Bson conventions, once: camelCase element names to match
+// ---- §1 Global Bson conventions: camelCase element names to match
 // docs/db-schema.md, and tolerate fields the model does not declare.
-ConventionRegistry.Register(
-    "SmartSolarConventions",
-    new ConventionPack
-    {
-        new CamelCaseElementNameConvention(),
-        new IgnoreExtraElementsConvention(true)
-    },
-    _ => true);
+// Extracted to BsonConventions so the tests map documents identically.
+BsonConventions.Register();
 
 // ---- §1 Mongo client is a singleton: it owns the connection pool and is
 // designed to be reused. One per request exhausts the pool under demo load.
