@@ -15,8 +15,12 @@ val localProperties = Properties().apply {
 
 val apiBaseUrl = localProperties.getProperty(
     "API_BASE_URL",
-    "http://10.0.2.2:5199/api"
+    "http://10.0.2.2:5046/api"
 )
+
+// Injected into the manifest via ${MAPS_API_KEY}. Empty is tolerated so the
+// project still builds for a member who has not set a Maps key yet.
+val mapsApiKey = localProperties.getProperty("MAPS_API_KEY", "")
 android {
     namespace = "com.sliit.smartsolar"
     compileSdk = 35
@@ -29,6 +33,7 @@ android {
         versionName = "1.0"
 
         buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
+        manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
