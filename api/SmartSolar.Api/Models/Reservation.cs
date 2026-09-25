@@ -27,6 +27,7 @@ public class Reservation
     public string SlotId { get; set; } = string.Empty;
 
     public DateTime SlotStart { get; set; }   // UTC, copied at creation
+    public DateTime SlotEnd { get; set; }     // UTC, copied at creation — QR expiry is SlotEnd + QrSettings.TokenExpiryHours
     public double EnergyKWh { get; set; }
     public string Status { get; set; } = string.Empty;   // Pending | Approved | Rejected | Cancelled | Completed
 

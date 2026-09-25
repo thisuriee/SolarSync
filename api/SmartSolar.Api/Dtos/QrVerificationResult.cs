@@ -15,11 +15,11 @@ public class QrVerificationResult
     // The reservation being fulfilled; only ever returned in its Approved state.
     public Reservation Reservation { get; set; } = new();
 
-    // The prosumer who owns the reservation, resolved from the reservation's NIC.
-    public User Prosumer { get; set; } = new();
+    // Safe projection of the prosumer — the user document itself is never sent.
+    public ProsumerSummary? Prosumer { get; set; }
 
     // The microgrid node the energy transfer takes place at.
-    public SolarStation Station { get; set; } = new();
+    public SolarStation? Station { get; set; }
 
     // Single-use proof that the QR was scanned; required by CompleteReservation.
     public string VerificationId { get; set; } = string.Empty;

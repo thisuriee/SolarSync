@@ -11,7 +11,7 @@ using System.Text;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Options;
 using SmartSolar.Api.Dtos;
-using SmartSolar.Api.Exceptions;
+using SmartSolar.Api.Helpers;
 using SmartSolar.Api.Repositories;
 using SmartSolar.Api.Settings;
 
@@ -20,15 +20,23 @@ namespace SmartSolar.Api.Services;
 public class QrService : IQrService
 {
     private readonly IReservationRepository _reservationRepository;
+    private readonly IUserRepository _userRepository;
+    private readonly IStationRepository _stationRepository;
     private readonly IOptions<QrSettings> _qrSettings;
 
     // verificationId -> (reservationId, expiry). Populated by VerifyQrToken and
-    // read by CompleteReservation in a later commit; unused for now.
+    // read by CompleteReservation in a later commit.
     private readonly ConcurrentDictionary<string, (string ReservationId, DateTime ExpiresAt)> _verificationStore = new();
 
-    public QrService(IReservationRepository reservationRepository, IOptions<QrSettings> qrSettings)
+    public QrService(
+        IReservationRepository reservationRepository,
+        IUserRepository userRepository,
+        IStationRepository stationRepository,
+        IOptions<QrSettings> qrSettings)
     {
         _reservationRepository = reservationRepository;
+        _userRepository = userRepository;
+        _stationRepository = stationRepository;
         _qrSettings = qrSettings;
     }
 
@@ -47,7 +55,7 @@ public class QrService : IQrService
                 404);
         }
 
-        if (reservation.Nic != prosumerNic)
+        if (reservation.ProsumerNIC != prosumerNic)
         {
             throw new BusinessRuleException(
                 "RESERVATION_ACCESS_DENIED",
@@ -76,9 +84,72 @@ public class QrService : IQrService
         return new QrTokenResult { Token = plaintextToken, ExpiresAt = qrExpiresAt };
     }
 
-    // Verifies a scanned token and returns the booking details. Next commit.
-    public Task<QrVerificationResult> VerifyQrToken(string token, string operatorId)
-        => throw new NotImplementedException();
+    // Verifies a scanned token and issues the short-lived verificationId that is
+    // the only thing authorising CompleteReservation.
+    public async Task<QrVerificationResult> VerifyQrToken(string token, string operatorId)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            throw new BusinessRuleException(
+                "QR_INVALID",
+                "Invalid QR code",
+                "The scanned QR code is not valid.",
+                400);
+        }
+
+        string tokenHash = HashToken(token);
+
+        var reservation = await _reservationRepository.FindByQrTokenHash(tokenHash);
+
+        if (reservation is null)
+        {
+            throw new BusinessRuleException(
+                "QR_INVALID",
+                "Invalid QR code",
+                "The scanned QR code is not valid.",
+                400);
+        }
+
+        if (reservation.QrExpiresAt == null || reservation.QrExpiresAt < DateTime.UtcNow)
+        {
+            throw new BusinessRuleException(
+                "QR_EXPIRED",
+                "QR code expired",
+                "This QR code has expired and can no longer be used.",
+                410);
+        }
+
+        if (reservation.Status != "Approved")
+        {
+            throw new BusinessRuleException(
+                "QR_ALREADY_USED",
+                "QR code already used",
+                "This QR code has already been used to complete a transfer.",
+                409);
+        }
+
+        string verificationId = GenerateSecureToken();
+        DateTime verificationExpiresAt = DateTime.UtcNow
+            .AddMinutes(_qrSettings.Value.VerificationIdExpiryMinutes);
+        _verificationStore[verificationId] = (reservation.Id, verificationExpiresAt);
+
+        var prosumer = await _userRepository.FindByNic(reservation.ProsumerNIC);
+        var station = await _stationRepository.FindById(reservation.StationId);
+
+        return new QrVerificationResult
+        {
+            Reservation = reservation,
+            Prosumer = prosumer is null ? null : new ProsumerSummary
+            {
+                Nic = prosumer.Nic ?? string.Empty,
+                FullName = prosumer.FullName,
+                Email = prosumer.Email,
+                Phone = prosumer.Phone
+            },
+            Station = station,
+            VerificationId = verificationId
+        };
+    }
 
     // Finalises the energy transfer. Next commit.
     public Task CompleteReservation(string reservationId, string verificationId, string operatorId)

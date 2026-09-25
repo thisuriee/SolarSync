@@ -12,25 +12,32 @@ namespace SmartSolar.Api.Repositories;
 
 public class ReservationRepository : IReservationRepository
 {
-    private readonly IMongoCollection<EnergyReservation> _reservations;
+    private readonly IMongoCollection<Reservation> _reservations;
 
-    public ReservationRepository(IMongoCollection<EnergyReservation> reservations)
+    public ReservationRepository(IMongoCollection<Reservation> reservations)
     {
         _reservations = reservations;
     }
 
     // Finds a reservation by its ObjectId and returns the first match, or null.
-    public async Task<EnergyReservation?> FindReservationById(string id)
+    public async Task<Reservation?> FindReservationById(string id)
     {
-        var filter = Builders<EnergyReservation>.Filter.Eq(r => r.Id, id);
+        var filter = Builders<Reservation>.Filter.Eq(r => r.Id, id);
+        return await _reservations.Find(filter).FirstOrDefaultAsync();
+    }
+
+    // Filters on QrTokenHash — how a scanned token is resolved to its booking.
+    public async Task<Reservation?> FindByQrTokenHash(string qrTokenHash)
+    {
+        var filter = Builders<Reservation>.Filter.Eq(r => r.QrTokenHash, qrTokenHash);
         return await _reservations.Find(filter).FirstOrDefaultAsync();
     }
 
     // Sets the three QR fields on the reservation. Nothing else is touched.
     public async Task UpdateQrFields(string id, string qrTokenHash, DateTime qrIssuedAt, DateTime qrExpiresAt)
     {
-        var filter = Builders<EnergyReservation>.Filter.Eq(r => r.Id, id);
-        var update = Builders<EnergyReservation>.Update
+        var filter = Builders<Reservation>.Filter.Eq(r => r.Id, id);
+        var update = Builders<Reservation>.Update
             .Set(r => r.QrTokenHash, qrTokenHash)
             .Set(r => r.QrIssuedAt, qrIssuedAt)
             .Set(r => r.QrExpiresAt, qrExpiresAt);
