@@ -10,10 +10,10 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Options;
+using SmartSolar.Api.Configuration;
 using SmartSolar.Api.Dtos;
 using SmartSolar.Api.Helpers;
 using SmartSolar.Api.Repositories;
-using SmartSolar.Api.Settings;
 
 namespace SmartSolar.Api.Services;
 
