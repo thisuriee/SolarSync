@@ -47,7 +47,19 @@ builder.Services.AddScoped<IUserRepository>(sp =>
     new UserRepository(sp.GetRequiredService<MongoContext>().Users));
 builder.Services.AddScoped<IStationRepository>(sp =>
     new StationRepository(sp.GetRequiredService<MongoContext>().Stations));
+builder.Services.AddScoped<ISlotRepository>(sp =>
+    new SlotRepository(sp.GetRequiredService<MongoContext>().Slots));
 builder.Services.AddScoped<IQrService, QrService>();
+
+// Microgrid nodes and booking windows.
+builder.Services.AddScoped<INodeService, NodeService>();
+
+// The shared active-reservation predicate (docs/api-contract.md §6).
+// ReservationQueries is an interim implementation: when ReservationService
+// implements IReservationQueries, repoint this one line and delete the class.
+// NodeService depends on the interface, so nothing else changes.
+builder.Services.AddScoped<IReservationQueries>(sp =>
+    new ReservationQueries(sp.GetRequiredService<MongoContext>().Reservations));
 
 // Identity (M1): PBKDF2 hasher from docs/auth.md, stateless so a singleton.
 builder.Services.AddSingleton<IPasswordHasher<User>, PasswordHasher<User>>();

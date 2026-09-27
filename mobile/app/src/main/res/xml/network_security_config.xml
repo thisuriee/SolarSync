@@ -17,5 +17,7 @@
         <domain includeSubdomains="false">172.22.243.99</domain>
         <!-- Local dev over a real device on the same LAN -->
         <domain includeSubdomains="false">localhost</domain>
+        <!-- M2's dev machine on the LAN — physical-device testing -->
+        <domain includeSubdomains="false">192.168.1.2</domain>
     </domain-config>
 </network-security-config>
