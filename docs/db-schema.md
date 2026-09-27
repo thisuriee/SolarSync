@@ -74,6 +74,24 @@ The microgrid nodes.
 | `{location: "2dsphere"}` | geospatial | `/nodes/nearby` server-side distance |
 | `{status: 1}` | single | Prosumer sees active nodes only |
 
+**Constraints the API enforces** — added when the node endpoints were built. No field
+was added, removed or renamed; this records what `NodeService` now guarantees about
+documents written through the API, so the seed script and the API agree.
+
+| Field | Guarantee | Violation |
+|---|---|---|
+| `location` | Written only by `NodeService`, which maps an inbound `lat`/`lng` pair into `[longitude, latitude]`. Clients never send GeoJSON | — |
+| `capacityKWh` | Strictly greater than 0 | `400 NODE_INVALID_CAPACITY` |
+| `totalBatterySlots` | At least 1, and **never reducible below the largest `totalCapacity` of any slot on this station** | `400 NODE_INVALID_CAPACITY` / `409 NODE_CAPACITY_CONFLICT` |
+| `status` | Set to `Active` on create and thereafter changed only by the activate/deactivate routes. Not accepted in a create or update body | — |
+| `operatingSchedule` | At least one row; each `dayOfWeek` appears at most once; `closeTime` strictly after `openTime`; both `HH:mm` 24-hour | `400 NODE_INVALID_SCHEDULE` |
+| `createdBy` | Taken from the caller's JWT `sub` claim. Not accepted in a request body | — |
+| `createdAt` / `updatedAt` | `DateTime.UtcNow`, server-side. `createdAt` is preserved across updates | — |
+
+> `status`, `createdBy` and `createdAt` are absent from `NodeCreateRequest` and
+> `NodeUpdateRequest` altogether. A field a client cannot bind is a rule that cannot be
+> broken by editing a request.
+
 ---
 
 ## 3. `EnergyBookingSlots`
