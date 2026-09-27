@@ -22,7 +22,7 @@ All three roles live here, discriminated by `role`.
 | Field | Type | Required | Notes |
 |---|---|---|---|
 | `_id` | ObjectId | ✓ | |
-| `nic` | string | Prosumer only | **Unique sparse index.** Null for web users. **Immutable after creation** — the API never accepts it in an update body |
+| `nic` | string | Prosumer only | **Unique partial index.** Null for web users. Old (`9 digits + V/X`) or new (`12 digits`) format, stored upper-case — see `api-contract.md` §2. **Immutable after creation** — the API never accepts it in an update body |
 | `username` | string | ✓ | **Unique index.** Login identifier for all three roles |
 | `fullName` | string | ✓ | |
 | `email` | string | ✓ | Unique index |
@@ -41,7 +41,7 @@ All three roles live here, discriminated by `role`.
 
 | Index | Type | Why |
 |---|---|---|
-| `{nic: 1}` | unique, sparse | NIC as the business primary key. Sparse so web users with no NIC don't collide on null |
+| `{nic: 1}` | unique, partial (`nic` is a string) | NIC as the business primary key. Partial, not sparse: web users store `nic: null`, and a sparse index still indexes an explicit null, so the second web user would collide |
 | `{username: 1}` | unique | Login lookup |
 | `{email: 1}` | unique | |
 | `{role: 1, status: 1}` | compound | Drives `/prosumers/pending` and the user-management filters |
