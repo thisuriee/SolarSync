@@ -8,6 +8,7 @@
  */
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -51,6 +52,9 @@ builder.Services.AddScoped<IQrService, QrService>();
 // Identity (M1): PBKDF2 hasher from docs/auth.md, stateless so a singleton.
 builder.Services.AddSingleton<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IUserService, UserService>();
+// TEMPORARY: swap for M3's CountActiveForProsumer implementation when it lands.
+builder.Services.AddScoped<IProsumerReservationCounter, ProsumerReservationCounterStub>();
 
 // Singleton: the scan-to-complete handshake spans two requests, so the store
 // must outlive a single scoped QrService instance.
@@ -87,6 +91,9 @@ builder.Services
     });
 
 builder.Services.AddAuthorization();
+// Failed [Authorize] checks return the problem object (AUTH_FORBIDDEN_ROLE /
+// AUTH_INVALID_TOKEN) instead of an empty 401/403 body.
+builder.Services.AddSingleton<IAuthorizationMiddlewareResultHandler, ProblemAuthorizationResultHandler>();
 builder.Services.AddSingleton<JwtTokenGenerator>();
 
 // ---- §4 CORS — origins come from configuration so IIS differs from dev
