@@ -65,8 +65,6 @@ builder.Services.AddScoped<IReservationQueries>(sp =>
 builder.Services.AddSingleton<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
-// TEMPORARY: swap for M3's CountActiveForProsumer implementation when it lands.
-builder.Services.AddScoped<IProsumerReservationCounter, ProsumerReservationCounterStub>();
 
 // Singleton: the scan-to-complete handshake spans two requests, so the store
 // must outlive a single scoped QrService instance.
