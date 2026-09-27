@@ -32,6 +32,9 @@
             </intent-filter>
         </activity>
         <activity
+            android:name=".activities.RegisterProsumerActivity"
+            android:exported="false" />
+        <activity
             android:name=".activities.ProsumerHomeActivity"
             android:exported="false" />
         <activity

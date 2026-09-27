@@ -8,6 +8,7 @@
 package com.sliit.smartsolar.parsers;
 
 import com.sliit.smartsolar.models.LoginResult;
+import com.sliit.smartsolar.models.RegisterResult;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -30,6 +31,16 @@ public final class AuthParser {
                 optionalString(user, "nic"),
                 user.getString("fullName"),
                 user.getString("role"));
+    }
+
+    // Parses the 201 body of POST /auth/register-prosumer: {id, nic, status}.
+    public static RegisterResult parseRegister(String body) throws JSONException {
+        JSONObject json = new JSONObject(body);
+
+        return new RegisterResult(
+                json.getString("id"),
+                json.getString("nic"),
+                json.getString("status"));
     }
 
     // Reads a key that may be missing or JSON null. optString alone would turn

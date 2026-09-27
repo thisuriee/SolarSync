@@ -9,6 +9,7 @@
  */
 package com.sliit.smartsolar.activities;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.View;
@@ -44,8 +45,9 @@ public class LoginActivity extends AppCompatActivity {
     private ProgressBar progress;
     private Button buttonLogin;
 
-    // Binds the form, shows any message handed over by a logout/401, and
-    // restores a saved session instead of asking for credentials again.
+    // Binds the form (and the link to prosumer registration), shows any
+    // message handed over by a logout/401, and restores a saved session
+    // instead of asking for credentials again.
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -60,6 +62,8 @@ public class LoginActivity extends AppCompatActivity {
         buttonLogin = findViewById(R.id.buttonLogin);
 
         buttonLogin.setOnClickListener(v -> attemptLogin());
+        findViewById(R.id.buttonRegister).setOnClickListener(v ->
+                startActivity(new Intent(this, RegisterProsumerActivity.class)));
 
         String message = getIntent().getStringExtra(SessionManager.EXTRA_LOGIN_MESSAGE);
         if (message != null) {

@@ -15,4 +15,30 @@
     <string name="home_welcome">Welcome, %1$s</string>
     <string name="home_prosumer_role">Prosumer · NIC %1$s</string>
     <string name="home_operator_role">Grid Operator</string>
+
+    <!-- Registration (M1). Field-shape messages mirror the API's
+         RegisterProsumerRequest annotations; NIC format, NIC/username/email
+         uniqueness messages always come from the API's detail. -->
+    <string name="register_title">Create a prosumer account</string>
+    <string name="register_subtitle">A Backoffice officer activates new accounts before first login.</string>
+    <string name="register_link">New prosumer? Create an account</string>
+    <string name="register_have_account">Already registered? Log in</string>
+    <string name="label_nic">NIC</string>
+    <string name="label_full_name">Full name</string>
+    <string name="label_email">Email</string>
+    <string name="label_phone">Phone</string>
+    <string name="label_address">Address</string>
+    <string name="label_confirm_password">Confirm password</string>
+    <string name="action_register">Register</string>
+    <string name="action_back_to_login">Back to login</string>
+    <string name="error_full_name">Full name must be 2–100 characters.</string>
+    <string name="error_email">Enter a valid email address.</string>
+    <string name="error_phone">Phone must be 9–15 digits, optionally starting with +.</string>
+    <string name="error_address">Address must be 3–200 characters.</string>
+    <string name="error_username">Username must be 3–30 letters, digits, dots or underscores.</string>
+    <string name="error_password">Password must be at least 8 characters.</string>
+    <string name="error_password_mismatch">Passwords do not match.</string>
+    <string name="register_success_title">Registration received</string>
+    <string name="register_success_status">NIC %1$s · Status: %2$s</string>
+    <string name="register_success_body">A Backoffice officer must activate your account before you can log in. Until then, logging in shows the reason from the server.</string>
 </resources>
