@@ -2,8 +2,10 @@
  * File:    IStationRepository.cs
  * Author:  Imadh
  * Created: 2026-09-25
- * Purpose: Data access contract for the QR fulfilment vertical — resolves the
- *          station a reservation belongs to.
+ * Purpose: Data access contract for the SolarStationInfo collection.
+ *          FindById was added for the QR fulfilment vertical (Imadh); the
+ *          listing, insert and replace were added for microgrid node
+ *          management (Aman, 2026-09-27).
  */
 using SmartSolar.Api.Models;
 
@@ -13,4 +15,21 @@ public interface IStationRepository
 {
     // Returns the station with the given id, or null when it does not exist.
     Task<SolarStation?> FindById(string id);
+
+    // Returns stations ordered by name, narrowed by an exact status and a
+    // case-insensitive match on station name or city. Both filters are
+    // optional; null means "do not filter on this". The decision about which
+    // status a given caller is allowed to see belongs to NodeService.
+    Task<List<SolarStation>> FindAll(string? status, string? search);
+
+    // Inserts a new station and returns the id the driver assigned.
+    Task<string> Insert(SolarStation station);
+
+    // Replaces a station document wholesale. Returns false when no document
+    // matched, so the service can turn that into a 404.
+    Task<bool> Replace(string id, SolarStation station);
+
+    // Sets only status and updatedAt. A targeted update rather than a full
+    // replace, so a status flip cannot clobber a field edited concurrently.
+    Task<bool> UpdateStatus(string id, string status, DateTime updatedAt);
 }
