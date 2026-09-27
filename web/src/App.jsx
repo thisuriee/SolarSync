@@ -18,6 +18,7 @@ import BackofficeHomePage from './pages/home/BackofficeHomePage'
 import OperatorHomePage from './pages/home/OperatorHomePage'
 import PendingActivationsPage from './pages/users/PendingActivationsPage'
 import ProsumersPage from './pages/users/ProsumersPage'
+import WebUsersPage from './pages/users/WebUsersPage'
 import NotFoundPage from './pages/NotFoundPage'
 import { ROLES } from './utils/roles'
 
@@ -56,7 +57,7 @@ export default function App() {
             {/* M1 — Backoffice only */}
             <Route element={<ProtectedRoute roles={[BACKOFFICE]} />}>
               <Route path="/backoffice" element={<BackofficeHomePage />} />
-              <Route path="/webusers" element={<ComingSoon title="Web Users" owner="M1" />} />
+              <Route path="/webusers" element={<WebUsersPage />} />
               <Route path="/prosumers/pending" element={<PendingActivationsPage />} />
             </Route>
 
