@@ -23,6 +23,22 @@ namespace SmartSolar.Api.Services;
 
 public class NodeService : INodeService
 {
+    // How far a proximity search reaches when the caller does not say.
+    // Twenty-five kilometres covers Colombo and the towns around it, which is
+    // a useful first screenful without pulling in half the country.
+    private const double DefaultSearchRadiusKm = 25.0;
+
+    // The widest search that will be honoured. Not a technical limit — it
+    // stops a client asking for every node in the country and calling it a
+    // map, and it keeps an accidental radius of 100000 from being answered
+    // seriously.
+    private const double MaxSearchRadiusKm = 500.0;
+
+    // The most markers one search returns. A map with hundreds of pins is
+    // unreadable, and because the results arrive nearest-first this keeps the
+    // closest ones rather than an arbitrary slice.
+    private const int NearbySearchLimit = 50;
+
     private readonly IStationRepository _stations;
     private readonly ISlotRepository _slots;
     private readonly IReservationQueries _reservationQueries;
@@ -160,6 +176,38 @@ public class NodeService : INodeService
         return NodeResponse.FromStation(updated);
     }
 
+    // Nodes in service near a point, nearest first.
+    //
+    // THE RULES:
+    //   the point is a real place on Earth — latitude within +/-90, longitude
+    //     within +/-180
+    //   the radius is positive and not absurd
+    //   only nodes in service are returned, whoever is asking
+    //
+    // The last of those is not a role filter like the one on the node listing.
+    // This search answers "where could I charge", and a hub that is shut is
+    // not an answer to that question for anyone — so staff see the same set a
+    // prosumer does. Staff who want the full picture have the node listing,
+    // which does honour their role.
+    //
+    // Ordering and distance both come from the database. Nothing here sorts
+    // the results or measures anything: the geospatial index does both, and a
+    // client that recomputed the distance would be doing work the server is
+    // responsible for, differently in each app.
+    public async Task<List<NearbyNodeResponse>> FindNearby(double lat, double lng, double? radiusKm)
+    {
+        ValidateCoordinates(lat, lng);
+
+        var radius = ResolveRadius(radiusKm);
+
+        var found = await _stations.FindNearby(
+            lat, lng, radius, StationStatuses.Active, NearbySearchLimit);
+
+        return found
+            .Select(s => NearbyNodeResponse.FromStation(s, s.DistanceKm))
+            .ToList();
+    }
+
     // Takes a node out of service.
     //
     // THE RULE: deactivation is refused while active reservations still point
@@ -286,6 +334,39 @@ public class NodeService : INodeService
         }
 
         return match;
+    }
+
+    // Rule: a search radius must be a positive, sensible distance. Absent
+    // means the default rather than an error, so the simplest possible
+    // request — a latitude and a longitude — works on its own.
+    private static double ResolveRadius(double? radiusKm)
+    {
+        if (!radiusKm.HasValue)
+        {
+            return DefaultSearchRadiusKm;
+        }
+
+        var radius = radiusKm.Value;
+
+        if (double.IsNaN(radius) || radius <= 0)
+        {
+            throw new BusinessRuleException(
+                "NODE_INVALID_RADIUS",
+                "Invalid search radius",
+                "radiusKm must be greater than 0.",
+                StatusCodes.Status400BadRequest);
+        }
+
+        if (radius > MaxSearchRadiusKm)
+        {
+            throw new BusinessRuleException(
+                "NODE_INVALID_RADIUS",
+                "Invalid search radius",
+                $"radiusKm must not exceed {MaxSearchRadiusKm:0} km.",
+                StatusCodes.Status400BadRequest);
+        }
+
+        return radius;
     }
 
     // True when the caller holds the Prosumer role.

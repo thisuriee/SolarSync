@@ -69,6 +69,7 @@ Every code is owned by one member and added here as it is implemented. **This re
 | `NODE_INVALID_CAPACITY` | 400 | M2 | `capacityKWh` not greater than 0, or `totalBatterySlots` below 1 |
 | `NODE_INVALID_SCHEDULE` | 400 | M2 | Empty schedule, a repeated `dayOfWeek`, or a close time not after its open time |
 | `NODE_INVALID_STATUS_FILTER` | 400 | M2 | `?status=` is not `Active` or `Inactive` |
+| `NODE_INVALID_RADIUS` | 400 | M2 | `radiusKm` on the proximity search is not positive, or exceeds the maximum search radius |
 | `NODE_HAS_ACTIVE_RESERVATIONS` | 409 | M2 | Node deactivation blocked — include the count in `detail` |
 | `NODE_CAPACITY_CONFLICT` | 409 | M2 | Battery slot count would drop below what is already reserved |
 | `SLOT_NOT_FOUND` | 404 | M2 | No booking slot with that id, or the id is not a valid ObjectId |

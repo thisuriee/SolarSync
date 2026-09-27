@@ -72,7 +72,7 @@ The microgrid nodes.
 
 | Index | Type | Why |
 |---|---|---|
-| `{location: "2dsphere"}` | geospatial | `/nodes/nearby` server-side distance |
+| `{location: "2dsphere"}` | geospatial | `/nodes/nearby` server-side distance. **Required, not an optimisation** — `$geoNear` refuses to run without it rather than falling back to a collection scan |
 | `{status: 1}` | single | Prosumer sees active nodes only |
 
 **Constraints the API enforces** — added when the node endpoints were built. No field
