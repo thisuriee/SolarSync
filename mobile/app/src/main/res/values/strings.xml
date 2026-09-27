@@ -1,3 +1,18 @@
 <resources>
     <string name="app_name">SmaerSolar</string>
+
+    <!-- Identity (M1). Only form hints and navigation text live here: every
+         rule-failure message shown to the user is the API's own detail. -->
+    <string name="app_title">SmartSolar</string>
+    <string name="login_subtitle">Sign in as a Prosumer or Grid Operator</string>
+    <string name="label_username">Username</string>
+    <string name="label_password">Password</string>
+    <string name="action_login">Log in</string>
+    <string name="action_logout">Log out</string>
+    <string name="error_required">Required</string>
+    <string name="error_unexpected_response">The server sent a response the app could not read.</string>
+    <string name="login_use_web_portal">Backoffice accounts use the web portal.</string>
+    <string name="home_welcome">Welcome, %1$s</string>
+    <string name="home_prosumer_role">Prosumer · NIC %1$s</string>
+    <string name="home_operator_role">Grid Operator</string>
 </resources>
