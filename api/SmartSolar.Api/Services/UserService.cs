@@ -33,9 +33,13 @@ public class UserService : IUserService
 
     private readonly IUserRepository _users;
     private readonly IPasswordHasher<User> _passwordHasher;
-    private readonly IProsumerReservationCounter _reservations;
+    // The group's shared active-reservation predicate (docs/api-contract.md §6),
+    // owned outside this vertical. Identity only asks for a count.
+    private readonly IReservationQueries _reservations;
 
-    public UserService(IUserRepository users, IPasswordHasher<User> passwordHasher, IProsumerReservationCounter reservations)
+    // Dependencies come from DI (Program.cs). IReservationQueries is the same
+    // interface NodeService uses, so both verticals agree on "active".
+    public UserService(IUserRepository users, IPasswordHasher<User> passwordHasher, IReservationQueries reservations)
     {
         _users = users;
         _passwordHasher = passwordHasher;
@@ -317,7 +321,7 @@ public class UserService : IUserService
     }
 
     // Rule: no deactivation while the prosumer has active reservations. The
-    // "active" predicate is M3's (via IProsumerReservationCounter), not ours.
+    // "active" predicate is the shared one (IReservationQueries), not ours.
     private async Task EnsureNoActiveReservations(string nic)
     {
         var count = await _reservations.CountActiveForProsumer(nic);
