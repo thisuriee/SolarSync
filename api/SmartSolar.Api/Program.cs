@@ -8,6 +8,7 @@
  */
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
@@ -15,6 +16,7 @@ using MongoDB.Driver;
 using SmartSolar.Api.Configuration;
 using SmartSolar.Api.Helpers;
 using SmartSolar.Api.Middleware;
+using SmartSolar.Api.Models;
 using SmartSolar.Api.Repositories;
 using SmartSolar.Api.Services;
 
@@ -45,6 +47,10 @@ builder.Services.AddScoped<IUserRepository>(sp =>
 builder.Services.AddScoped<IStationRepository>(sp =>
     new StationRepository(sp.GetRequiredService<MongoContext>().Stations));
 builder.Services.AddScoped<IQrService, QrService>();
+
+// Identity (M1): PBKDF2 hasher from docs/auth.md, stateless so a singleton.
+builder.Services.AddSingleton<IPasswordHasher<User>, PasswordHasher<User>>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 // Singleton: the scan-to-complete handshake spans two requests, so the store
 // must outlive a single scoped QrService instance.

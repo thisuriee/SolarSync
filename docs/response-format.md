@@ -54,7 +54,11 @@ Every code is owned by one member and added here as it is implemented. **This re
 | `AUTH_ACCOUNT_PENDING` | 403 | M1 | Registered but not yet activated by Backoffice |
 | `AUTH_ACCOUNT_DEACTIVATED` | 403 | M1 | Needs Backoffice reactivation |
 | `AUTH_FORBIDDEN_ROLE` | 403 | M1 | Role lacks permission, or touching another user's data |
+| `AUTH_INVALID_TOKEN` | 401 | M1 | Token valid but missing a required claim, or its user no longer exists |
+| `USER_NIC_INVALID` | 400 | M1 | NIC is not 9 digits + V/X (old) or 12 digits (new) |
 | `USER_NIC_EXISTS` | 409 | M1 | Duplicate NIC at registration |
+| `USER_USERNAME_EXISTS` | 409 | M1 | Username already taken (compared case-insensitively) |
+| `USER_EMAIL_EXISTS` | 409 | M1 | Email already registered (compared case-insensitively) |
 | `USER_LAST_BACKOFFICE` | 409 | M1 | Cannot demote or disable the final Backoffice account |
 | `USER_HAS_ACTIVE_RESERVATIONS` | 409 | M1 | Prosumer deactivation blocked |
 | `NODE_HAS_ACTIVE_RESERVATIONS` | 409 | M2 | Node deactivation blocked — include the count in `detail` |
