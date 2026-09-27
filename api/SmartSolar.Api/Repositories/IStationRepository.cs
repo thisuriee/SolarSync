@@ -5,7 +5,8 @@
  * Purpose: Data access contract for the SolarStationInfo collection.
  *          FindById was added for the QR fulfilment vertical (Imadh); the
  *          listing, insert and replace were added for microgrid node
- *          management (Aman, 2026-09-27).
+ *          management (Aman, 2026-09-27), and the proximity search for the
+ *          nearby-stations map (Aman, 2026-09-28).
  */
 using SmartSolar.Api.Models;
 
@@ -32,4 +33,12 @@ public interface IStationRepository
     // Sets only status and updatedAt. A targeted update rather than a full
     // replace, so a status flip cannot clobber a field edited concurrently.
     Task<bool> UpdateStatus(string id, string status, DateTime updatedAt);
+
+    // Stations within radiusKm of a point, in the given status, nearest first,
+    // each carrying the distance the database measured. Ordering and distance
+    // both come from the geospatial index; the caller neither sorts nor
+    // measures anything. Capped at maxResults so a wide search cannot return
+    // more markers than a map can usefully show.
+    Task<List<NearbyStation>> FindNearby(
+        double lat, double lng, double radiusKm, string status, int maxResults);
 }

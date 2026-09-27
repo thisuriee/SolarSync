@@ -36,4 +36,9 @@ public interface INodeService
     // Returns a node to service. Carries no equivalent guard: bringing a hub
     // back cannot invalidate anything that already exists.
     Task<NodeResponse> Activate(string id);
+
+    // Nodes in service within radiusKm of a point, nearest first, each with
+    // the distance the database measured. radiusKm is optional and falls back
+    // to the default search radius.
+    Task<List<NearbyNodeResponse>> FindNearby(double lat, double lng, double? radiusKm);
 }
