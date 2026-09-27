@@ -118,6 +118,32 @@ Bookable time windows belonging to a node. Separate collection, not embedded —
 | `{stationId: 1, slotStart: 1}` | compound | Slot listing per node, ordered |
 | `{slotStart: 1}` | single | `/slots/available` 7-day window filter |
 
+**Constraints the API enforces** — added when the slot endpoints were built. No field was
+added, removed or renamed; this records what `SlotService` guarantees about documents
+written through the API.
+
+| Field | Guarantee | Violation |
+|---|---|---|
+| `stationId` | Taken from the route on create and carried over unchanged on update. A window cannot be moved to another node, which would silently relocate any booking on it | — |
+| `slotStart` / `slotEnd` | `slotEnd` strictly after `slotStart` | `400 SLOT_INVALID_WINDOW` |
+| window vs. siblings | No two windows on the same node may cover the same time. Ranges are **half-open**, so a window ending exactly as the next begins is adjacent, not overlapping | `409 SLOT_OVERLAP` |
+| `totalCapacity` | At least 1; never above the station's `totalBatterySlots`; never reduced below the slot's own `reservedCount` | `400 SLOT_INVALID_CAPACITY` · `409 NODE_CAPACITY_CONFLICT` · `409 SLOT_CAPACITY_CONFLICT` |
+| `energyPerSlotKWh` | Strictly greater than 0 | `400 SLOT_INVALID_CAPACITY` |
+| `reservedCount` | Set to 0 on create and **never written again by slot CRUD**. Update rebuilds the document from the stored value | — |
+| `status` | Set to `Open` on create and never written again by slot CRUD | — |
+| `createdAt` / `updatedAt` | `DateTime.UtcNow`, server-side. `createdAt` preserved across updates | — |
+| deletion | Refused while any reservation references the slot — active ones because someone is relying on them, historical ones because their `slotId` would be left dangling | `409 SLOT_HAS_RESERVATIONS` |
+
+> `reservedCount` and `status` appear on neither `SlotCreateRequest` nor `SlotUpdateRequest`.
+> A field a client cannot bind cannot be applied, which is why the contract's "ignored in
+> request bodies" needs no defensive code to honour.
+
+**A slot is only offered for booking when its station is `Active`.** `/slots/available`
+filters on the parent station's status as well as the slot's own, so taking a node out of
+service withdraws its windows from the booking list without anything being written to them.
+Slot documents are never touched by a node status change — the node's status is the single
+place that fact is recorded.
+
 ---
 
 ## 4. `EnergyReservation`

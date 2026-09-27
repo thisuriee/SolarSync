@@ -53,6 +53,7 @@ builder.Services.AddScoped<IQrService, QrService>();
 
 // Microgrid nodes and booking windows.
 builder.Services.AddScoped<INodeService, NodeService>();
+builder.Services.AddScoped<ISlotService, SlotService>();
 
 // The shared active-reservation predicate (docs/api-contract.md §6).
 // ReservationQueries is an interim implementation: when ReservationService

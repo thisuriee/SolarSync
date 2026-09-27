@@ -82,6 +82,22 @@ public class ReservationQueries : IReservationQueries
         return await _reservations.CountDocumentsAsync(filter);
     }
 
+    // Counts every reservation pointing at a booking window, regardless of
+    // status or date. Deliberately does not compose onto the active filter:
+    // the question is whether anything at all still refers to the window, so
+    // cancelled and completed bookings count too.
+    public async Task<long> CountForSlot(string slotId)
+    {
+        if (!ObjectId.TryParse(slotId, out _))
+        {
+            return 0;
+        }
+
+        var filter = Builders<Reservation>.Filter.Eq(r => r.SlotId, slotId);
+
+        return await _reservations.CountDocumentsAsync(filter);
+    }
+
     // The predicate itself, in one place: a live status and a start time that
     // has not passed. Every public method above composes onto this, so the
     // three counts can never disagree about what "active" means.

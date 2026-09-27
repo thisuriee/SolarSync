@@ -73,4 +73,27 @@ public class NodesController : ControllerBase
     {
         return Ok(await _nodeService.Update(id, request));
     }
+
+    // PATCH /api/nodes/{id}/deactivate — takes a node out of service.
+    // Refused with 409 while active reservations reference it; that check and
+    // its message are produced by NodeService, not here.
+    //
+    // No request body: the route names the transition, so there is nothing for
+    // a caller to supply and nothing to validate. The Android client cannot
+    // send PATCH over HttpURLConnection and reaches this action by posting
+    // with the override header, which the middleware rewrites before routing.
+    [HttpPatch("{id}/deactivate")]
+    [Authorize(Roles = UserRoles.Backoffice)]
+    public async Task<IActionResult> Deactivate(string id)
+    {
+        return Ok(await _nodeService.Deactivate(id));
+    }
+
+    // PATCH /api/nodes/{id}/activate — returns a node to service.
+    [HttpPatch("{id}/activate")]
+    [Authorize(Roles = UserRoles.Backoffice)]
+    public async Task<IActionResult> Activate(string id)
+    {
+        return Ok(await _nodeService.Activate(id));
+    }
 }
