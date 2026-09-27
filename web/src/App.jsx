@@ -17,6 +17,7 @@ import UseMobileAppPage from './pages/auth/UseMobileAppPage'
 import BackofficeHomePage from './pages/home/BackofficeHomePage'
 import OperatorHomePage from './pages/home/OperatorHomePage'
 import PendingActivationsPage from './pages/users/PendingActivationsPage'
+import ProsumersPage from './pages/users/ProsumersPage'
 import NotFoundPage from './pages/NotFoundPage'
 import { ROLES } from './utils/roles'
 
@@ -67,7 +68,7 @@ export default function App() {
             {/* Backoffice + Grid Operator */}
             <Route element={<ProtectedRoute roles={STAFF} />}>
               {/* M1 */}
-              <Route path="/prosumers" element={<ComingSoon title="Prosumers" owner="M1" />} />
+              <Route path="/prosumers" element={<ProsumersPage />} />
               {/* M2 — proposed path */}
               <Route path="/nodes" element={<ComingSoon title="Nodes" owner="M2" />} />
               {/* M3 — proposed path */}
