@@ -36,6 +36,13 @@ public static class ClaimsPrincipalExtensions
         return RequireClaim(user, "role");
     }
 
+    // Bundles sub, role and nic into one value for the service layer, which
+    // uses it for the own-data-only and Backoffice-only re-checks.
+    public static CallerIdentity GetCaller(this ClaimsPrincipal user)
+    {
+        return new CallerIdentity(user.GetUserId(), user.GetRole(), user.GetNic());
+    }
+
     // Reads a mandatory claim or throws 401 so the client clears its session.
     private static string RequireClaim(ClaimsPrincipal user, string type)
     {
