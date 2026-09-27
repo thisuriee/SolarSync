@@ -8,6 +8,7 @@
  */
 package com.sliit.smartsolar.activities;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.widget.TextView;
 
@@ -19,11 +20,22 @@ import com.sliit.smartsolar.utils.SessionManager;
 
 public class ProsumerHomeActivity extends AppCompatActivity {
 
-    // Shows who is signed in (from the session row) and wires logout.
+    // Wires My profile and logout.
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_prosumer_home);
+
+        findViewById(R.id.buttonMyProfile).setOnClickListener(v ->
+                startActivity(new Intent(this, MyProfileActivity.class)));
+        findViewById(R.id.buttonLogout).setOnClickListener(v -> SessionManager.logout(this));
+    }
+
+    // Shows who is signed in, from the session row. In onResume so a name
+    // changed on My Profile appears as soon as the user comes back.
+    @Override
+    protected void onResume() {
+        super.onResume();
 
         SessionDao session = new SessionDao(this);
         TextView textWelcome = findViewById(R.id.textWelcome);
@@ -31,7 +43,5 @@ public class ProsumerHomeActivity extends AppCompatActivity {
 
         textWelcome.setText(getString(R.string.home_welcome, session.getFullName()));
         textRole.setText(getString(R.string.home_prosumer_role, session.getNic()));
-
-        findViewById(R.id.buttonLogout).setOnClickListener(v -> SessionManager.logout(this));
     }
 }

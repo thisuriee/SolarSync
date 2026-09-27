@@ -10,6 +10,7 @@
 package com.sliit.smartsolar.utils;
 
 import android.app.Activity;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 
@@ -17,6 +18,7 @@ import com.sliit.smartsolar.activities.LoginActivity;
 import com.sliit.smartsolar.activities.OperatorHomeActivity;
 import com.sliit.smartsolar.activities.ProsumerHomeActivity;
 import com.sliit.smartsolar.database.DatabaseHelper;
+import com.sliit.smartsolar.database.DbContract;
 import com.sliit.smartsolar.database.SessionDao;
 import com.sliit.smartsolar.models.LoginResult;
 import com.sliit.smartsolar.models.UserRoles;
@@ -49,6 +51,39 @@ public final class SessionManager {
                 login.token,
                 DateUtils.toUtcWire(new Date()),
                 login.expiresAt);
+    }
+
+    // Keeps the cached display name in step after the API accepted a profile
+    // edit. The value passed is the API's response, not what was typed. Every
+    // other session column is rewritten unchanged.
+    public static void updateFullName(Context context, String fullName) {
+        SessionDao dao = new SessionDao(context);
+        ContentValues row = dao.get();
+        if (row == null) {
+            return;
+        }
+
+        dao.save(
+                row.getAsString(DbContract.Session.USER_ID),
+                row.getAsString(DbContract.Session.USERNAME),
+                row.getAsString(DbContract.Session.NIC),
+                fullName,
+                row.getAsString(DbContract.Session.ROLE),
+                row.getAsString(DbContract.Session.TOKEN),
+                row.getAsString(DbContract.Session.ISSUED_AT),
+                row.getAsString(DbContract.Session.EXPIRES_AT));
+    }
+
+    // Wipes the session row and every cached table without leaving the
+    // current screen. Used when the account itself is gone (self-deactivation),
+    // so the outcome can still be shown before returning to login.
+    public static void clear(Context context) {
+        DatabaseHelper.getInstance(context).clearAll();
+    }
+
+    // Opens the login screen as a fresh task, closing everything else.
+    public static void goToLogin(Activity from) {
+        openLogin(from, null);
     }
 
     // True when a token is stored. Says nothing about whether it is still

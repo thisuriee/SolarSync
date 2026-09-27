@@ -9,6 +9,7 @@ package com.sliit.smartsolar.parsers;
 
 import com.sliit.smartsolar.models.LoginResult;
 import com.sliit.smartsolar.models.RegisterResult;
+import com.sliit.smartsolar.models.UserProfile;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -41,6 +42,24 @@ public final class AuthParser {
                 json.getString("id"),
                 json.getString("nic"),
                 json.getString("status"));
+    }
+
+    // Parses a UserProfileResponse, returned by GET/PUT /prosumers/{nic} and
+    // PATCH /prosumers/{nic}/request-deactivation. Optional fields may be null.
+    public static UserProfile parseProfile(String body) throws JSONException {
+        JSONObject json = new JSONObject(body);
+
+        return new UserProfile(
+                json.getString("id"),
+                optionalString(json, "nic"),
+                json.getString("username"),
+                json.getString("fullName"),
+                json.getString("email"),
+                json.getString("phone"),
+                optionalString(json, "address"),
+                json.getString("role"),
+                json.getString("status"),
+                optionalString(json, "deactivationRequestedAt"));
     }
 
     // Reads a key that may be missing or JSON null. optString alone would turn

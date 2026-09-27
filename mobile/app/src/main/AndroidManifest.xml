@@ -38,6 +38,9 @@
             android:name=".activities.ProsumerHomeActivity"
             android:exported="false" />
         <activity
+            android:name=".activities.MyProfileActivity"
+            android:exported="false" />
+        <activity
             android:name=".activities.OperatorHomeActivity"
             android:exported="false" />
 

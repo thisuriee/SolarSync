@@ -29,6 +29,15 @@
             android:layout_marginBottom="24dp"
             android:textAppearance="?attr/textAppearanceBodyMedium" />
 
+        <!-- Identity (M1): own profile, edit and self-deactivation. -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonMyProfile"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:text="@string/action_my_profile" />
+
         <!-- Other verticals add their buttons/cards here. -->
         <LinearLayout
             android:id="@+id/homeContent"

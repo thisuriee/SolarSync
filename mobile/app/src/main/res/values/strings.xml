@@ -41,4 +41,23 @@
     <string name="register_success_title">Registration received</string>
     <string name="register_success_status">NIC %1$s · Status: %2$s</string>
     <string name="register_success_body">A Backoffice officer must activate your account before you can log in. Until then, logging in shows the reason from the server.</string>
+
+    <!-- My Profile + self-deactivation (M1). The outcome of each action comes
+         from the API; rule failures show the API's detail. -->
+    <string name="action_my_profile">My profile</string>
+    <string name="profile_title">My profile</string>
+    <string name="profile_nic">NIC: %1$s</string>
+    <string name="profile_username">Username: %1$s</string>
+    <string name="profile_status">Status: %1$s</string>
+    <string name="profile_saved">Profile updated.</string>
+    <string name="action_edit_profile">Edit profile</string>
+    <string name="action_save">Save</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_deactivate_account">Deactivate my account</string>
+    <string name="deactivate_confirm_title">Deactivate your account?</string>
+    <string name="deactivate_confirm_body">You will be signed out and cannot log in again until a Backoffice officer reactivates the account. The server refuses this while you have active reservations.</string>
+    <string name="action_deactivate">Deactivate</string>
+    <string name="deactivated_title">Account deactivated</string>
+    <string name="deactivated_status">Status: %1$s · requested %2$s</string>
+    <string name="deactivated_body">You have been signed out. Only a Backoffice officer can reactivate this account.</string>
 </resources>
