@@ -54,11 +54,14 @@ Every code is owned by one member and added here as it is implemented. **This re
 | `AUTH_ACCOUNT_PENDING` | 403 | M1 | Registered but not yet activated by Backoffice |
 | `AUTH_ACCOUNT_DEACTIVATED` | 403 | M1 | Needs Backoffice reactivation |
 | `AUTH_FORBIDDEN_ROLE` | 403 | M1 | Role lacks permission, or touching another user's data |
-| `AUTH_INVALID_TOKEN` | 401 | M1 | Token valid but missing a required claim, or its user no longer exists |
+| `AUTH_INVALID_TOKEN` | 401 | M1 | No token, expired/invalid token (framework challenge), token missing a required claim, or its user no longer exists. Clients: clear session, go to login |
 | `USER_NIC_INVALID` | 400 | M1 | NIC is not 9 digits + V/X (old) or 12 digits (new) |
 | `USER_NIC_EXISTS` | 409 | M1 | Duplicate NIC at registration |
 | `USER_USERNAME_EXISTS` | 409 | M1 | Username already taken (compared case-insensitively) |
 | `USER_EMAIL_EXISTS` | 409 | M1 | Email already registered (compared case-insensitively) |
+| `USER_NOT_FOUND` | 404 | M1 | No web user with that id / no prosumer with that NIC. Never used to hide a 403 |
+| `USER_ROLE_INVALID` | 400 | M1 | Role not allowed on the route — e.g. `Prosumer` sent to `/webusers` |
+| `USER_STATUS_INVALID` | 400 | M1 | Status not allowed on the route — web users are `Active` or `Deactivated` only |
 | `USER_LAST_BACKOFFICE` | 409 | M1 | Cannot demote or disable the final Backoffice account |
 | `USER_HAS_ACTIVE_RESERVATIONS` | 409 | M1 | Prosumer deactivation blocked |
 | `NODE_NOT_FOUND` | 404 | M2 | No node with that id, or the id is not a valid ObjectId |

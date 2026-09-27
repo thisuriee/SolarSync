@@ -8,7 +8,6 @@
  *          uniqueness checks, and role/status forced server-side. Throws
  *          BusinessRuleException; ExceptionHandlingMiddleware formats it.
  */
-using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Identity;
 using MongoDB.Driver;
 using SmartSolar.Api.Dtos;
@@ -20,10 +19,6 @@ namespace SmartSolar.Api.Services;
 
 public class AuthService : IAuthService
 {
-    // Sri Lankan NIC: old format is 9 digits + V or X (e.g. 881234567V),
-    // new format is 12 digits (e.g. 200012345671). Both are accepted.
-    private static readonly Regex NicPattern = new(@"^([0-9]{9}[VX]|[0-9]{12})$", RegexOptions.Compiled);
-
     private readonly IUserRepository _users;
     private readonly IPasswordHasher<User> _passwordHasher;
     private readonly JwtTokenGenerator _tokenGenerator;
@@ -42,7 +37,7 @@ public class AuthService : IAuthService
     // password, so an attacker cannot probe an account's status without it.
     public async Task<LoginResponse> Login(LoginRequest request)
     {
-        var user = await _users.FindByUsername(NormaliseUsername(request.Username));
+        var user = await _users.FindByUsername(IdentityFormat.NormaliseUsername(request.Username));
 
         if (user is null || !PasswordMatches(user, request.Password))
         {
@@ -77,11 +72,11 @@ public class AuthService : IAuthService
     // client cannot influence them. Only a Backoffice officer can activate.
     public async Task<RegisterProsumerResponse> RegisterProsumer(RegisterProsumerRequest request)
     {
-        var nic = request.Nic.Trim().ToUpperInvariant();
-        var username = NormaliseUsername(request.Username);
-        var email = request.Email.Trim().ToLowerInvariant();
+        var nic = IdentityFormat.NormaliseNic(request.Nic);
+        var username = IdentityFormat.NormaliseUsername(request.Username);
+        var email = IdentityFormat.NormaliseEmail(request.Email);
 
-        if (!NicPattern.IsMatch(nic))
+        if (!IdentityFormat.IsValidNic(nic))
         {
             throw new BusinessRuleException(
                 "USER_NIC_INVALID",
@@ -92,9 +87,9 @@ public class AuthService : IAuthService
 
         // Friendly pre-checks. The unique indexes are the real guarantee —
         // see the duplicate-key catch below for the concurrent case.
-        if (await _users.NicExists(nic)) throw NicExists(nic);
-        if (await _users.UsernameExists(username)) throw UsernameExists();
-        if (await _users.EmailExists(email)) throw EmailExists();
+        if (await _users.NicExists(nic)) throw UserErrors.NicExists(nic);
+        if (await _users.UsernameExists(username)) throw UserErrors.UsernameExists();
+        if (await _users.EmailExists(email)) throw UserErrors.EmailExists();
 
         var now = DateTime.UtcNow;
         var user = new User
@@ -119,12 +114,8 @@ public class AuthService : IAuthService
         catch (MongoWriteException ex) when (ex.WriteError?.Category == ServerErrorCategory.DuplicateKey)
         {
             // Two registrations raced past the pre-checks; the unique index
-            // rejected the second. Map the violated index (default names from
-            // docs/seed/seed-database.js) to the right code.
-            var message = ex.WriteError.Message;
-            if (message.Contains("index: nic_1")) throw NicExists(nic);
-            if (message.Contains("index: username_1")) throw UsernameExists();
-            throw EmailExists();
+            // rejected the second.
+            throw UserErrors.FromDuplicateKey(ex, nic);
         }
 
         return new RegisterProsumerResponse
@@ -188,40 +179,4 @@ public class AuthService : IAuthService
         return result != PasswordVerificationResult.Failed;
     }
 
-    // Usernames are stored lower-case so "Nimal.Perera" and "nimal.perera"
-    // cannot become two accounts.
-    private static string NormaliseUsername(string username)
-    {
-        return username.Trim().ToLowerInvariant();
-    }
-
-    // Builds the 409 for a NIC that is already registered.
-    private static BusinessRuleException NicExists(string nic)
-    {
-        return new BusinessRuleException(
-            "USER_NIC_EXISTS",
-            "NIC already registered",
-            $"An account with NIC {nic} already exists.",
-            StatusCodes.Status409Conflict);
-    }
-
-    // Builds the 409 for a username that is already taken.
-    private static BusinessRuleException UsernameExists()
-    {
-        return new BusinessRuleException(
-            "USER_USERNAME_EXISTS",
-            "Username taken",
-            "That username is already taken. Please choose another.",
-            StatusCodes.Status409Conflict);
-    }
-
-    // Builds the 409 for an email that is already registered.
-    private static BusinessRuleException EmailExists()
-    {
-        return new BusinessRuleException(
-            "USER_EMAIL_EXISTS",
-            "Email already registered",
-            "An account with that email address already exists.",
-            StatusCodes.Status409Conflict);
-    }
 }

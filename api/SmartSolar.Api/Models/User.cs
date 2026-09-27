@@ -26,6 +26,7 @@ public class User
     public string Role { get; set; } = string.Empty;           // Backoffice | GridOperator | Prosumer
     public string Status { get; set; } = string.Empty;         // Pending | Active | Deactivated
     public DateTime? DeactivationRequestedAt { get; set; }
+    public string? DeactivationReason { get; set; }            // optional note from a Backoffice deactivation
 
     [BsonRepresentation(BsonType.ObjectId)]
     public string? ActivatedBy { get; set; }

@@ -54,6 +54,8 @@
 | PATCH | `/prosumers/{nic}/activate` | — | Updated | **Backoffice** | **Grid Operator receives `403 AUTH_FORBIDDEN_ROLE`.** Sets `status=Active`, `activatedBy`, `activatedAt`. Re-checked inside the service, not only by the attribute |
 | PATCH | `/prosumers/{nic}/deactivate` | `{reason?}` | Updated | **Backoffice** | Blocked if active reservations exist |
 
+**NIC format (agreed M1 + M3, 2026-09-27):** both Sri Lankan formats are accepted — old `^[0-9]{9}[VX]$` (9 digits + V/X) and new `^[0-9]{12}$` (12 digits). The API trims and upper-cases the NIC before validating and storing it, so `881234567v` is stored as `881234567V`; route `{nic}` values are normalised the same way. An invalid NIC at registration → `400 USER_NIC_INVALID`. Seed prosumers use the new 12-digit format.
+
 ---
 
 ## 3. Microgrid Nodes & Slots — Member 2

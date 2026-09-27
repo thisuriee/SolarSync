@@ -1,0 +1,320 @@
+# =============================================================================
+# File:    Identity.http
+# Author:  Dahami
+# Created: 2026-09-27
+# Purpose: Manual test script for the M1 Identity & Access API
+#          (docs/api-contract.md §2). Run with the VS Code "REST Client"
+#          extension (humao.rest-client): click "Send Request" above each one.
+#          Every request states the result it must produce (EXPECT ...).
+#
+# Order matters: run section A (logins) first — later requests reuse the
+# tokens. Section F creates throwaway "zz.test." accounts; delete them after
+# (see the footer). Seed password for every seeded user is Test@1234.
+# =============================================================================
+
+@base = http://localhost:5199/api
+@password = Test@1234
+
+# Tokens captured from the named login requests below
+@bo = {{loginBO.response.body.$.token}}
+@op = {{loginOP.response.body.$.token}}
+@p1 = {{loginP1.response.body.$.token}}
+@zp = {{loginZP.response.body.$.token}}
+
+# Seed data (docs/seed/seed-database.js)
+@nimalNic = 200012345671
+@otherNic = 200012345672
+@adminId = 650000000000000000000001
+@officerId = 650000000000000000000002
+
+# Throwaway accounts created in sections C and F
+@zzNic = 990000001V
+@zzOpId = {{createOp.response.body.$.id}}
+
+
+# =============================================================================
+# A. Logins — run all three first
+# =============================================================================
+
+### A1 Backoffice login — EXPECT 200 {token, expiresAt, user.role: "Backoffice"}
+# @name loginBO
+POST {{base}}/auth/login
+Content-Type: application/json
+
+{ "username": "backoffice.admin", "password": "{{password}}" }
+
+### A2 Grid Operator login — EXPECT 200, role "GridOperator"
+# @name loginOP
+POST {{base}}/auth/login
+Content-Type: application/json
+
+{ "username": "operator.colombo", "password": "{{password}}" }
+
+### A3 Prosumer login (Nimal) — EXPECT 200, role "Prosumer", nic 200012345671
+# @name loginP1
+POST {{base}}/auth/login
+Content-Type: application/json
+
+{ "username": "nimal.perera", "password": "{{password}}" }
+
+
+# =============================================================================
+# B. Role gate — the [Authorize(Roles = ...)] attribute
+#    (ProblemAuthorizationResultHandler gives these a code in the body)
+# =============================================================================
+
+### B1 Web users as Grid Operator — EXPECT 403 AUTH_FORBIDDEN_ROLE
+GET {{base}}/webusers
+Authorization: Bearer {{op}}
+
+### B2 Web users with no token — EXPECT 401 AUTH_INVALID_TOKEN
+GET {{base}}/webusers
+
+### B3 Prosumer list as a Prosumer — EXPECT 403 AUTH_FORBIDDEN_ROLE
+GET {{base}}/prosumers
+Authorization: Bearer {{p1}}
+
+### B4 Pending queue as Grid Operator — EXPECT 403 (Backoffice only)
+GET {{base}}/prosumers/pending
+Authorization: Bearer {{op}}
+
+
+# =============================================================================
+# C. Web users (Backoffice)
+# =============================================================================
+
+### C1 List web users — EXPECT 200 array, only Backoffice/GridOperator, no passwordHash
+GET {{base}}/webusers
+Authorization: Bearer {{bo}}
+
+### C2 Filter by role — EXPECT 200, GridOperators only
+GET {{base}}/webusers?role=GridOperator&status=Active
+Authorization: Bearer {{bo}}
+
+### C3 Filter role=Prosumer — EXPECT 400 USER_ROLE_INVALID
+GET {{base}}/webusers?role=Prosumer
+Authorization: Bearer {{bo}}
+
+### C4 Create web user with role Prosumer — EXPECT 400 USER_ROLE_INVALID
+POST {{base}}/webusers
+Authorization: Bearer {{bo}}
+Content-Type: application/json
+
+{ "username": "zz.test.bad", "fullName": "Zz Bad", "email": "zz.test.bad@example.com",
+  "phone": "0770000009", "password": "{{password}}", "role": "Prosumer" }
+
+### C5 Create with a taken username (different case) — EXPECT 409 USER_USERNAME_EXISTS
+POST {{base}}/webusers
+Authorization: Bearer {{bo}}
+Content-Type: application/json
+
+{ "username": "Backoffice.Admin", "fullName": "Zz Dup", "email": "zz.test.dup@example.com",
+  "phone": "0770000009", "password": "{{password}}", "role": "GridOperator" }
+
+### C6 Create a throwaway Grid Operator — EXPECT 201, status "Active", Location header
+# @name createOp
+POST {{base}}/webusers
+Authorization: Bearer {{bo}}
+Content-Type: application/json
+
+{ "username": "zz.test.operator", "fullName": "Zz Test Operator", "email": "zz.test.operator@example.com",
+  "phone": "0770000003", "password": "{{password}}", "role": "GridOperator" }
+
+### C7 PUT: promote it to Backoffice — EXPECT 200, role "Backoffice"
+PUT {{base}}/webusers/{{zzOpId}}
+Authorization: Bearer {{bo}}
+Content-Type: application/json
+
+{ "fullName": "Zz Promoted", "email": "zz.test.operator@example.com",
+  "phone": "0770000003", "role": "Backoffice", "status": "Active" }
+
+### C8 PATCH status to Pending — EXPECT 400 USER_STATUS_INVALID (web users: Active/Deactivated)
+PATCH {{base}}/webusers/{{zzOpId}}/status
+Authorization: Bearer {{bo}}
+Content-Type: application/json
+
+{ "status": "Pending" }
+
+### C9 A prosumer's id on /webusers — EXPECT 404 USER_NOT_FOUND
+PUT {{base}}/webusers/650000000000000000000021
+Authorization: Bearer {{bo}}
+Content-Type: application/json
+
+{ "fullName": "Zz", "email": "zz.test.x@example.com", "phone": "0770000003",
+  "role": "GridOperator", "status": "Active" }
+
+
+# =============================================================================
+# D. Last active Backoffice guard — USER_LAST_BACKOFFICE
+#    Active Backoffice count now: admin + officer + zz = 3.
+#    D2 briefly deactivates the seeded officer. ALWAYS run D5 to restore it.
+# =============================================================================
+
+### D1 Deactivate zz (3 -> 2) — EXPECT 200
+PATCH {{base}}/webusers/{{zzOpId}}/status
+Authorization: Bearer {{bo}}
+Content-Type: application/json
+
+{ "status": "Deactivated" }
+
+### D2 Deactivate backoffice.officer (2 -> 1) — EXPECT 200
+PATCH {{base}}/webusers/{{officerId}}/status
+Authorization: Bearer {{bo}}
+Content-Type: application/json
+
+{ "status": "Deactivated" }
+
+### D3 Deactivate the LAST one (admin) via PATCH — EXPECT 409 USER_LAST_BACKOFFICE
+PATCH {{base}}/webusers/{{adminId}}/status
+Authorization: Bearer {{bo}}
+Content-Type: application/json
+
+{ "status": "Deactivated" }
+
+### D4 Demote the last one via PUT instead — EXPECT 409 (same guard on both routes)
+PUT {{base}}/webusers/{{adminId}}
+Authorization: Bearer {{bo}}
+Content-Type: application/json
+
+{ "fullName": "Amara Wickramasinghe", "email": "amara.w@smartsolar.lk",
+  "phone": "0112345678", "role": "GridOperator", "status": "Active" }
+
+### D5 RESTORE backoffice.officer — EXPECT 200, status "Active"
+PATCH {{base}}/webusers/{{officerId}}/status
+Authorization: Bearer {{bo}}
+Content-Type: application/json
+
+{ "status": "Active" }
+
+
+# =============================================================================
+# E. Prosumer profile ownership — 403, never 404
+# =============================================================================
+
+### E1 Own profile — EXPECT 200
+GET {{base}}/prosumers/{{nimalNic}}
+Authorization: Bearer {{p1}}
+
+### E2 Someone else's profile — EXPECT 403 AUTH_FORBIDDEN_ROLE
+GET {{base}}/prosumers/{{otherNic}}
+Authorization: Bearer {{p1}}
+
+### E3 A NIC that does not exist, as a prosumer — EXPECT 403 (not 404: existence not revealed)
+GET {{base}}/prosumers/999999999999
+Authorization: Bearer {{p1}}
+
+### E4 Same NIC as Backoffice — EXPECT 404 USER_NOT_FOUND (staff get the honest answer)
+GET {{base}}/prosumers/999999999999
+Authorization: Bearer {{bo}}
+
+### E5 Edit someone else's profile — EXPECT 403
+PUT {{base}}/prosumers/{{otherNic}}
+Authorization: Bearer {{p1}}
+Content-Type: application/json
+
+{ "fullName": "Hacked", "email": "zz.test.hack@example.com", "phone": "0770000002", "address": "Nowhere" }
+
+### E6 Paged list — EXPECT 200 {items, page:1, pageSize:2, totalCount, totalPages}
+GET {{base}}/prosumers?pageSize=2
+Authorization: Bearer {{op}}
+
+### E7 Search — EXPECT 200, Nimal found (case-insensitive)
+GET {{base}}/prosumers?q=NIMAL
+Authorization: Bearer {{op}}
+
+### E8 Search with regex characters — EXPECT 200, 0 items (matched literally, not as a regex)
+GET {{base}}/prosumers?q=.*
+Authorization: Bearer {{bo}}
+
+
+# =============================================================================
+# F. Prosumer lifecycle with a throwaway account
+#    register -> Pending -> activate -> edit -> deactivate -> reactivate
+# =============================================================================
+
+### F1 Register — EXPECT 201 {id, nic:"990000001V", status:"Pending"}
+POST {{base}}/auth/register-prosumer
+Content-Type: application/json
+
+{ "nic": "990000001v", "fullName": "Zz Test Prosumer", "email": "zz.test.prosumer@example.com",
+  "phone": "0770000001", "address": "1 Test Road", "username": "zz.test.prosumer", "password": "{{password}}" }
+
+### F2 Log in while Pending — EXPECT 403 AUTH_ACCOUNT_PENDING
+POST {{base}}/auth/login
+Content-Type: application/json
+
+{ "username": "zz.test.prosumer", "password": "{{password}}" }
+
+### F3 Pending queue — EXPECT 200, contains 990000001V
+GET {{base}}/prosumers/pending
+Authorization: Bearer {{bo}}
+
+### F4 *** VIVA *** Grid Operator activates — EXPECT 403 AUTH_FORBIDDEN_ROLE
+PATCH {{base}}/prosumers/{{zzNic}}/activate
+Authorization: Bearer {{op}}
+
+### F5 Backoffice activates — EXPECT 200, status "Active", activatedBy = admin id, activatedAt set
+PATCH {{base}}/prosumers/{{zzNic}}/activate
+Authorization: Bearer {{bo}}
+
+### F6 Log in now — EXPECT 200 (captures the zz token)
+# @name loginZP
+POST {{base}}/auth/login
+Content-Type: application/json
+
+{ "username": "zz.test.prosumer", "password": "{{password}}" }
+
+### F7 Edit own profile, smuggling nic/role/status — EXPECT 200: name changed,
+###    nic/role/status UNCHANGED, email stored lower-case
+PUT {{base}}/prosumers/{{zzNic}}
+Authorization: Bearer {{zp}}
+Content-Type: application/json
+
+{ "fullName": "Zz Edited", "email": "ZZ.Test.Prosumer@Example.com", "phone": "0770000002",
+  "address": "2 Test Road", "nic": "111111111V", "role": "Backoffice", "status": "Deactivated" }
+
+### F8 Take Nimal's email — EXPECT 409 USER_EMAIL_EXISTS
+PUT {{base}}/prosumers/{{zzNic}}
+Authorization: Bearer {{zp}}
+Content-Type: application/json
+
+{ "fullName": "Zz Edited", "email": "nimal.perera@gmail.com", "phone": "0770000002", "address": "2 Test Road" }
+
+### F9 Backoffice deactivates with a reason — EXPECT 200, status "Deactivated", deactivationReason set
+PATCH {{base}}/prosumers/{{zzNic}}/deactivate
+Authorization: Bearer {{bo}}
+Content-Type: application/json
+
+{ "reason": "Manual test" }
+
+### F10 Log in while Deactivated — EXPECT 403 AUTH_ACCOUNT_DEACTIVATED
+POST {{base}}/auth/login
+Content-Type: application/json
+
+{ "username": "zz.test.prosumer", "password": "{{password}}" }
+
+### F11 Grid Operator tries to REactivate — EXPECT 403
+PATCH {{base}}/prosumers/{{zzNic}}/activate
+Authorization: Bearer {{op}}
+
+### F12 Backoffice reactivates — EXPECT 200, deactivationReason cleared
+PATCH {{base}}/prosumers/{{zzNic}}/activate
+Authorization: Bearer {{bo}}
+
+### F13 Prosumer asks to deactivate someone else — EXPECT 403
+PATCH {{base}}/prosumers/{{nimalNic}}/request-deactivation
+Authorization: Bearer {{zp}}
+
+### F14 Self-deactivation the ANDROID way (POST + override header) — EXPECT 200,
+###     status "Deactivated", deactivationRequestedAt set
+POST {{base}}/prosumers/{{zzNic}}/request-deactivation
+Authorization: Bearer {{zp}}
+X-HTTP-Method-Override: PATCH
+
+
+# =============================================================================
+# Cleanup (there is deliberately no DELETE route for users):
+# In Compass -> SmartSolarDb -> UsersDetail, filter
+#     { username: /^zz\.test\./ }
+# check it shows only zz.test.* documents, then delete them.
+# =============================================================================
