@@ -32,6 +32,7 @@ All three roles live here, discriminated by `role`.
 | `role` | string enum | ✓ | `Backoffice` \| `GridOperator` \| `Prosumer` |
 | `status` | string enum | ✓ | `Pending` \| `Active` \| `Deactivated` |
 | `deactivationRequestedAt` | date? | | Set by the prosumer self-service request |
+| `deactivationReason` | string? | | Optional note from `PATCH /prosumers/{nic}/deactivate` (Backoffice). Cleared on reactivation |
 | `activatedBy` | ObjectId? | | `_id` of the Backoffice officer — the audit evidence for the Backoffice-only reactivation rule |
 | `activatedAt` | date? | | |
 | `createdAt` / `updatedAt` | date | ✓ | UTC |

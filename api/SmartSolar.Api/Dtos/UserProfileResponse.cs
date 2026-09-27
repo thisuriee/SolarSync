@@ -23,6 +23,7 @@ public class UserProfileResponse
     public string Role { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
     public DateTime? DeactivationRequestedAt { get; set; }
+    public string? DeactivationReason { get; set; }
     public string? ActivatedBy { get; set; }
     public DateTime? ActivatedAt { get; set; }
     public DateTime CreatedAt { get; set; }
@@ -44,6 +45,7 @@ public class UserProfileResponse
             Role = user.Role,
             Status = user.Status,
             DeactivationRequestedAt = user.DeactivationRequestedAt,
+            DeactivationReason = user.DeactivationReason,
             ActivatedBy = user.ActivatedBy,
             ActivatedAt = user.ActivatedAt,
             CreatedAt = user.CreatedAt,
