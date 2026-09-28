@@ -8,6 +8,7 @@
  */
 package com.sliit.smartsolar.activities;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.widget.TextView;
 
@@ -32,6 +33,10 @@ public class OperatorHomeActivity extends AppCompatActivity {
         textWelcome.setText(getString(R.string.home_welcome, session.getFullName()));
         textRole.setText(R.string.home_operator_role);
 
+        findViewById(R.id.buttonNearbyNodes).setOnClickListener(v ->
+                startActivity(new Intent(this, NearbyNodesMapActivity.class)));
+        findViewById(R.id.buttonNodeList).setOnClickListener(v ->
+                startActivity(new Intent(this, NodeListActivity.class)));
         findViewById(R.id.buttonLogout).setOnClickListener(v -> SessionManager.logout(this));
     }
 }

@@ -32,6 +32,10 @@ public class ProsumerHomeActivity extends AppCompatActivity {
                 startActivity(new Intent(this, SlotSearchActivity.class)));
         findViewById(R.id.buttonMyBookings).setOnClickListener(v ->
                 startActivity(new Intent(this, MyBookingsActivity.class)));
+        findViewById(R.id.buttonNearbyNodes).setOnClickListener(v ->
+                startActivity(new Intent(this, NearbyNodesMapActivity.class)));
+        findViewById(R.id.buttonNodeList).setOnClickListener(v ->
+                startActivity(new Intent(this, NodeListActivity.class)));
         findViewById(R.id.buttonLogout).setOnClickListener(v -> SessionManager.logout(this));
     }
 
