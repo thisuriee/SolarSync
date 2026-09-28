@@ -44,6 +44,24 @@
             android:name=".activities.OperatorHomeActivity"
             android:exported="false" />
 
+        <!-- Reservations (M3). Not exported: reachable only from the app's
+             own screens after login. -->
+        <activity
+            android:name=".activities.SlotSearchActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activities.CreateReservationActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activities.ReservationSummaryActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activities.MyBookingsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activities.EditReservationActivity"
+            android:exported="false" />
+
         <!-- Maps key read from local.properties. An unregistered SHA-1 produces
              a grey map with no error dialog, so every member's debug fingerprint
              must be registered against this key. -->

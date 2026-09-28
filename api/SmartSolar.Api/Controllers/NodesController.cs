@@ -45,6 +45,26 @@ public class NodesController : ControllerBase
         return Ok(await _nodeService.FindAll(status, q, User.GetRole()));
     }
 
+    // GET /api/nodes/nearby?lat=&lng=&radiusKm= — nodes in service near a
+    // point, nearest first, each carrying the distance the database measured.
+    // This is what the map draws: a marker per result at the latitude and
+    // longitude in the response, with the distance shown beside it.
+    //
+    // Declared before the {id} route for readability only — routing matches a
+    // literal segment ahead of a parameter regardless of order, so "nearby"
+    // can never be mistaken for a node id.
+    //
+    // The position is bound as an object rather than as loose parameters so
+    // that a missing lat or lng is a 400 naming the field. Bound as plain
+    // doubles, an absent value would arrive as 0 and the search would run
+    // from the Gulf of Guinea and report no nodes nearby.
+    [HttpGet("nearby")]
+    public async Task<IActionResult> GetNearby([FromQuery] NearbyNodeQuery query)
+    {
+        return Ok(await _nodeService.FindNearby(
+            query.Lat!.Value, query.Lng!.Value, query.RadiusKm));
+    }
+
     // GET /api/nodes/{id} — one node with its booking-window summary and the
     // count of active reservations that currently block deactivation.
     [HttpGet("{id}")]
@@ -72,5 +92,28 @@ public class NodesController : ControllerBase
     public async Task<IActionResult> Update(string id, [FromBody] NodeUpdateRequest request)
     {
         return Ok(await _nodeService.Update(id, request));
+    }
+
+    // PATCH /api/nodes/{id}/deactivate — takes a node out of service.
+    // Refused with 409 while active reservations reference it; that check and
+    // its message are produced by NodeService, not here.
+    //
+    // No request body: the route names the transition, so there is nothing for
+    // a caller to supply and nothing to validate. The Android client cannot
+    // send PATCH over HttpURLConnection and reaches this action by posting
+    // with the override header, which the middleware rewrites before routing.
+    [HttpPatch("{id}/deactivate")]
+    [Authorize(Roles = UserRoles.Backoffice)]
+    public async Task<IActionResult> Deactivate(string id)
+    {
+        return Ok(await _nodeService.Deactivate(id));
+    }
+
+    // PATCH /api/nodes/{id}/activate — returns a node to service.
+    [HttpPatch("{id}/activate")]
+    [Authorize(Roles = UserRoles.Backoffice)]
+    public async Task<IActionResult> Activate(string id)
+    {
+        return Ok(await _nodeService.Activate(id));
     }
 }

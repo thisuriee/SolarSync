@@ -23,6 +23,22 @@ namespace SmartSolar.Api.Services;
 
 public class NodeService : INodeService
 {
+    // How far a proximity search reaches when the caller does not say.
+    // Twenty-five kilometres covers Colombo and the towns around it, which is
+    // a useful first screenful without pulling in half the country.
+    private const double DefaultSearchRadiusKm = 25.0;
+
+    // The widest search that will be honoured. Not a technical limit — it
+    // stops a client asking for every node in the country and calling it a
+    // map, and it keeps an accidental radius of 100000 from being answered
+    // seriously.
+    private const double MaxSearchRadiusKm = 500.0;
+
+    // The most markers one search returns. A map with hundreds of pins is
+    // unreadable, and because the results arrive nearest-first this keeps the
+    // closest ones rather than an arbitrary slice.
+    private const int NearbySearchLimit = 50;
+
     private readonly IStationRepository _stations;
     private readonly ISlotRepository _slots;
     private readonly IReservationQueries _reservationQueries;
@@ -160,6 +176,128 @@ public class NodeService : INodeService
         return NodeResponse.FromStation(updated);
     }
 
+    // Nodes in service near a point, nearest first.
+    //
+    // THE RULES:
+    //   the point is a real place on Earth — latitude within +/-90, longitude
+    //     within +/-180
+    //   the radius is positive and not absurd
+    //   only nodes in service are returned, whoever is asking
+    //
+    // The last of those is not a role filter like the one on the node listing.
+    // This search answers "where could I charge", and a hub that is shut is
+    // not an answer to that question for anyone — so staff see the same set a
+    // prosumer does. Staff who want the full picture have the node listing,
+    // which does honour their role.
+    //
+    // Ordering and distance both come from the database. Nothing here sorts
+    // the results or measures anything: the geospatial index does both, and a
+    // client that recomputed the distance would be doing work the server is
+    // responsible for, differently in each app.
+    public async Task<List<NearbyNodeResponse>> FindNearby(double lat, double lng, double? radiusKm)
+    {
+        ValidateCoordinates(lat, lng);
+
+        var radius = ResolveRadius(radiusKm);
+
+        var found = await _stations.FindNearby(
+            lat, lng, radius, StationStatuses.Active, NearbySearchLimit);
+
+        return found
+            .Select(s => NearbyNodeResponse.FromStation(s, s.DistanceKm))
+            .ToList();
+    }
+
+    // Takes a node out of service.
+    //
+    // THE RULE: deactivation is refused while active reservations still point
+    // at this node. A reservation is active when it is Pending or Approved and
+    // its slot has not started yet — the shared definition, read through
+    // IReservationQueries rather than re-implemented here, so this check and
+    // the one guarding slot deletion can never disagree about what "active"
+    // means.
+    //
+    // The refusal carries the count in its message. The clients display that
+    // sentence verbatim, and a number no client could have worked out for
+    // itself is what makes it evident the decision was taken on the server.
+    //
+    // Deactivating an already-inactive node succeeds and changes nothing. The
+    // caller asked for a state that already holds, and treating a repeated
+    // request as an error would turn two officers clicking at once into a
+    // spurious failure.
+    //
+    // Nothing is written to the node's booking windows. Their availability
+    // follows from the node's status wherever they are listed or booked, so
+    // stamping "closed" onto each one would duplicate a fact that can then
+    // drift — and slot status is not this service's to write.
+    public async Task<NodeResponse> Deactivate(string id)
+    {
+        var station = await LoadOrThrow(id);
+
+        if (station.Status == StationStatuses.Inactive)
+        {
+            return NodeResponse.FromStation(station);
+        }
+
+        var activeReservations = await _reservationQueries.CountActiveForStation(id);
+
+        if (activeReservations > 0)
+        {
+            // Written out in both forms rather than assembled from fragments:
+            // the clients print this sentence as-is, so subject and verb have
+            // to agree in each case.
+            var detail = activeReservations == 1
+                ? "This node cannot be deactivated while 1 active reservation still "
+                    + "references it. Cancel or complete it first."
+                : $"This node cannot be deactivated while {activeReservations} active "
+                    + "reservations still reference it. Cancel or complete them first.";
+
+            throw new BusinessRuleException(
+                "NODE_HAS_ACTIVE_RESERVATIONS",
+                "Node has active reservations",
+                detail,
+                StatusCodes.Status409Conflict);
+        }
+
+        return await ChangeStatus(station, StationStatuses.Inactive);
+    }
+
+    // Returns a node to service.
+    //
+    // There is deliberately no counterpart to the deactivation guard.
+    // Deactivating can strand a booking somebody is relying on tomorrow;
+    // activating cannot invalidate anything, because nothing can have been
+    // booked against a node while it was out of service. Reactivating also
+    // restores its existing booking windows as they were, which is the
+    // consequence of this service never having written to them.
+    public async Task<NodeResponse> Activate(string id)
+    {
+        var station = await LoadOrThrow(id);
+
+        if (station.Status == StationStatuses.Active)
+        {
+            return NodeResponse.FromStation(station);
+        }
+
+        return await ChangeStatus(station, StationStatuses.Active);
+    }
+
+    // Applies a status transition through the targeted repository update, so
+    // the write touches status and updatedAt only and cannot revert a field
+    // somebody edited in between. The in-memory copy is moved to match, so
+    // the response reflects what was stored without a second read.
+    private async Task<NodeResponse> ChangeStatus(SolarStation station, string status)
+    {
+        var updatedAt = DateTime.UtcNow;
+
+        await _stations.UpdateStatus(station.Id, status, updatedAt);
+
+        station.Status = status;
+        station.UpdatedAt = updatedAt;
+
+        return NodeResponse.FromStation(station);
+    }
+
     // Loads a station or throws the 404 the clients render. Kept in one place
     // so every route reports a missing node identically.
     private async Task<SolarStation> LoadOrThrow(string id)
@@ -196,6 +334,39 @@ public class NodeService : INodeService
         }
 
         return match;
+    }
+
+    // Rule: a search radius must be a positive, sensible distance. Absent
+    // means the default rather than an error, so the simplest possible
+    // request — a latitude and a longitude — works on its own.
+    private static double ResolveRadius(double? radiusKm)
+    {
+        if (!radiusKm.HasValue)
+        {
+            return DefaultSearchRadiusKm;
+        }
+
+        var radius = radiusKm.Value;
+
+        if (double.IsNaN(radius) || radius <= 0)
+        {
+            throw new BusinessRuleException(
+                "NODE_INVALID_RADIUS",
+                "Invalid search radius",
+                "radiusKm must be greater than 0.",
+                StatusCodes.Status400BadRequest);
+        }
+
+        if (radius > MaxSearchRadiusKm)
+        {
+            throw new BusinessRuleException(
+                "NODE_INVALID_RADIUS",
+                "Invalid search radius",
+                $"radiusKm must not exceed {MaxSearchRadiusKm:0} km.",
+                StatusCodes.Status400BadRequest);
+        }
+
+        return radius;
     }
 
     // True when the caller holds the Prosumer role.
@@ -310,7 +481,7 @@ public class NodeService : INodeService
 
     // Formats a count with its noun. The clients render these messages
     // verbatim, so "1 battery slots" would be visible to a user.
-    private static string Pluralise(int count, string noun)
+    private static string Pluralise(long count, string noun)
     {
         return count == 1 ? $"1 {noun}" : $"{count} {noun}s";
     }

@@ -27,4 +27,18 @@ public interface INodeService
     // Updates the editable fields of a node. Status, createdBy and createdAt
     // are preserved from the stored document.
     Task<NodeResponse> Update(string id, NodeUpdateRequest request);
+
+    // Takes a node out of service. Refused while active reservations still
+    // reference it, so a node nobody is relying on can always be retired and
+    // one people are relying on never disappears underneath them.
+    Task<NodeResponse> Deactivate(string id);
+
+    // Returns a node to service. Carries no equivalent guard: bringing a hub
+    // back cannot invalidate anything that already exists.
+    Task<NodeResponse> Activate(string id);
+
+    // Nodes in service within radiusKm of a point, nearest first, each with
+    // the distance the database measured. radiusKm is optional and falls back
+    // to the default search radius.
+    Task<List<NearbyNodeResponse>> FindNearby(double lat, double lng, double? radiusKm);
 }

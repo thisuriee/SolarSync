@@ -53,6 +53,7 @@ builder.Services.AddScoped<IQrService, QrService>();
 
 // Microgrid nodes and booking windows.
 builder.Services.AddScoped<INodeService, NodeService>();
+builder.Services.AddScoped<ISlotService, SlotService>();
 
 // Reservation workflow (M3). SlotCapacityRepository is the only writer of
 // reservedCount. ReservationService is registered once and exposed through
