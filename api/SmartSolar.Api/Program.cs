@@ -57,16 +57,15 @@ builder.Services.AddScoped<ISlotService, SlotService>();
 
 // Reservation workflow (M3). SlotCapacityRepository is the only writer of
 // reservedCount. ReservationService is registered once and exposed through
-// all three interfaces, so the shared active-reservation predicate
-// (docs/api-contract.md §6) has exactly one implementation: NodeService
-// (IReservationQueries) and UserService (IProsumerReservationCounter) both
-// resolve to the same instance per request.
+// both interfaces, so the shared active-reservation predicate
+// (docs/api-contract.md §6) has exactly one implementation: NodeService,
+// SlotService and UserService (IReservationQueries) resolve to the same
+// instance per request.
 builder.Services.AddScoped<ISlotCapacityRepository>(sp =>
     new SlotCapacityRepository(sp.GetRequiredService<MongoContext>().Slots));
 builder.Services.AddScoped<ReservationService>();
 builder.Services.AddScoped<IReservationService>(sp => sp.GetRequiredService<ReservationService>());
 builder.Services.AddScoped<IReservationQueries>(sp => sp.GetRequiredService<ReservationService>());
-builder.Services.AddScoped<IProsumerReservationCounter>(sp => sp.GetRequiredService<ReservationService>());
 
 // Identity (M1): PBKDF2 hasher from docs/auth.md, stateless so a singleton.
 builder.Services.AddSingleton<IPasswordHasher<User>, PasswordHasher<User>>();

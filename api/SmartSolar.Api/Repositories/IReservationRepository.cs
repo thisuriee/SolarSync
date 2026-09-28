@@ -38,6 +38,9 @@ public interface IReservationRepository
         IReadOnlyCollection<string> statuses, DateTime slotStartAfter,
         string? stationId = null, string? slotId = null, string? nic = null);
 
+    // Counts every reservation referencing a slot, whatever its status or time.
+    Task<long> CountBySlot(string slotId);
+
     // One prosumer's reservations, optionally in one status, latest slot first.
     Task<List<Reservation>> FindByNic(string nic, string? status);
 

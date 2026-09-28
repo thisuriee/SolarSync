@@ -90,6 +90,19 @@ public class ReservationRepository : IReservationRepository
         return await _reservations.CountDocumentsAsync(filter);
     }
 
+    // No status or time filter: this answers "does anything still point at
+    // this slot", not "is anything active". An invalid id counts zero.
+    public async Task<long> CountBySlot(string slotId)
+    {
+        if (!ObjectId.TryParse(slotId, out _))
+        {
+            return 0;
+        }
+
+        return await _reservations.CountDocumentsAsync(
+            Builders<Reservation>.Filter.Eq(r => r.SlotId, slotId));
+    }
+
     // Served by the {prosumerNIC: 1, slotStart: -1} index.
     public async Task<List<Reservation>> FindByNic(string nic, string? status)
     {

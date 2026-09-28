@@ -7,8 +7,8 @@
  *
  *          1. The active-reservation predicate — status in {Pending, Approved}
  *             AND slotStart > utcNow — written once (CountActive) and exposed
- *             through both IReservationQueries (M2: node deactivate, slot
- *             delete) and IProsumerReservationCounter (M1: prosumer deactivate).
+ *             through IReservationQueries (M2: node deactivate, slot delete;
+ *             M1: prosumer deactivate).
  *          2. reservedCount mutation — only through ISlotCapacityRepository's
  *             atomic TryClaim / Release, called only from this class.
  *          3. The status transition guard — EnsureTransition, public static so
@@ -30,7 +30,7 @@ using SmartSolar.Api.Repositories;
 
 namespace SmartSolar.Api.Services;
 
-public class ReservationService : IReservationService, IReservationQueries, IProsumerReservationCounter
+public class ReservationService : IReservationService, IReservationQueries
 {
     // R1: a slot may be booked at most this far ahead. Change it here only.
     public static readonly TimeSpan BookingWindow = TimeSpan.FromDays(7);
@@ -113,6 +113,13 @@ public class ReservationService : IReservationService, IReservationQueries, IPro
         }
 
         return CountActive(nic: IdentityFormat.NormaliseNic(nic));
+    }
+
+    // Referential check (not the active predicate): any reservation at all,
+    // past or cancelled included, blocks slot deletion so none is orphaned.
+    public Task<long> CountForSlot(string slotId)
+    {
+        return _reservations.CountBySlot(slotId);
     }
 
     // THE predicate: status in {Pending, Approved} AND slotStart > utcNow.
