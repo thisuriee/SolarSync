@@ -60,4 +60,72 @@
     <string name="deactivated_title">Account deactivated</string>
     <string name="deactivated_status">Status: %1$s · requested %2$s</string>
     <string name="deactivated_body">You have been signed out. Only a Backoffice officer can reactivate this account.</string>
+
+    <!-- Reservations (M3). Labels and navigation text only. No rule numbers
+         (7 days, 12 hours) appear here on purpose: every rule failure shows
+         the API's detail, so the rules live in ReservationService alone. -->
+    <string name="action_book_slot">Book a slot</string>
+    <string name="action_my_bookings">My bookings</string>
+    <string name="action_home">Home</string>
+    <string name="action_refresh">Refresh</string>
+    <string name="action_book">Book this slot</string>
+    <string name="action_choose_slot">Choose another slot</string>
+    <string name="action_save_changes">Save changes</string>
+    <string name="action_cancel_booking">Cancel booking</string>
+    <string name="action_keep_booking">Keep booking</string>
+
+    <string name="label_node">Node</string>
+    <string name="label_slot">Slot</string>
+    <string name="label_energy">Energy (kWh)</string>
+    <string name="label_spaces_left">Spaces left</string>
+    <string name="label_reference">Reference</string>
+    <string name="label_status">Status</string>
+    <string name="label_booked_at">Booked</string>
+    <string name="label_updated_at">Last updated</string>
+    <string name="label_approved_at">Approved</string>
+    <string name="label_rejection_reason">Rejection reason</string>
+    <string name="label_cancelled_at">Cancelled</string>
+    <string name="label_completed_at">Completed</string>
+
+    <string name="reservation_energy_value">%1$s kWh</string>
+    <string name="reservation_node_fallback">Node …%1$s</string>
+    <string name="duration_days_hours">%1$d d %2$d h</string>
+    <string name="duration_hours_minutes">%1$d h %2$d min</string>
+    <string name="error_energy_number">Enter the energy as a number, e.g. 2.5</string>
+
+    <string name="slot_search_title">Find a slot</string>
+    <string name="slot_pick_title">Choose a new slot</string>
+    <string name="slot_search_subtitle">Windows open for booking right now, in your local time. Spaces are live and re-checked when you book.</string>
+    <string name="slot_search_all_nodes">All nodes</string>
+    <string name="slot_search_empty">No bookable windows for this choice right now.</string>
+    <string name="slot_capacity_line">%1$d of %2$d spaces left · up to %3$s</string>
+    <string name="slot_spaces_value">%1$d of %2$d</string>
+
+    <string name="create_title">Book energy</string>
+    <string name="create_energy_helper">This window offers up to %1$s per booking.</string>
+
+    <string name="summary_created_title">Booking received</string>
+    <string name="summary_created_message">Your booking is pending until a grid operator approves it. You can change or cancel it from My bookings.</string>
+    <string name="summary_updated_title">Booking updated</string>
+    <string name="summary_updated_message">The server saved your changes. These are the booking\'s details now.</string>
+    <string name="summary_cancelled_title">Booking cancelled</string>
+    <string name="summary_cancelled_message">The booking is cancelled and its space has been released for other prosumers.</string>
+
+    <string name="my_bookings_title">My bookings</string>
+    <string name="my_bookings_empty">You have no bookings yet.</string>
+    <string name="my_bookings_pending">Pending approval (%1$d)</string>
+    <string name="my_bookings_approved">Approved (%1$d)</string>
+    <string name="my_bookings_closed">Past and closed (%1$d)</string>
+    <string name="booking_meta_line">%1$s · %2$s · Ref %3$s</string>
+
+    <string name="edit_title">Booking</string>
+    <string name="edit_starts_in">Starts in %1$s</string>
+    <string name="edit_started">This slot has already started.</string>
+    <string name="edit_audit_header">History</string>
+    <string name="edit_closed">This booking is closed and can no longer be changed.</string>
+    <string name="edit_change_header">Change or cancel</string>
+    <string name="edit_notice">Changes and cancellations close a set time before the slot starts. If it is too late, the server says so here.</string>
+    <string name="edit_chosen_slot">%1$s · %2$s</string>
+    <string name="cancel_confirm_title">Cancel this booking?</string>
+    <string name="cancel_confirm_body">%1$s at %2$s. A cancelled booking cannot be restored.</string>
 </resources>
