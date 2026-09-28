@@ -58,6 +58,28 @@ function initialForm(node) {
   }
 }
 
+// Matches a coordinate pair the way mapping tools put it on the clipboard:
+// two decimal numbers separated by a comma, with optional spaces.
+const COORDINATE_PAIR = /^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$/
+
+// True when the two values are a usable point on Earth. Only decides whether to
+// offer the preview link — the bounds themselves are the API's rule.
+function isPlottable(lat, lng) {
+  const a = Number(lat)
+  const b = Number(lng)
+
+  return (
+    lat !== '' &&
+    lng !== '' &&
+    Number.isFinite(a) &&
+    Number.isFinite(b) &&
+    a >= -90 &&
+    a <= 90 &&
+    b >= -180 &&
+    b <= 180
+  )
+}
+
 // `node` null means create; a node means edit. `onSaved` receives the saved resource so
 // the list can update without refetching everything.
 //
@@ -75,6 +97,24 @@ export default function NodeFormModal({ node, onClose, onSaved }) {
   // Updates one field of the form.
   function setField(name, value) {
     setForm((current) => ({ ...current, [name]: value }))
+  }
+
+  // Accepts a whole coordinate pair pasted into either box.
+  //
+  // Mapping tools copy a location as "6.9271, 79.8612", and a number input
+  // rejects that outright because of the comma — so the paste lands as nothing
+  // and the officer retypes both halves by hand. That retyping is where a
+  // longitude becomes a number from the wrong country, which is a mistake no
+  // validation can catch, because the result is still a real place.
+  //
+  // A recognised pair is split across both fields; anything else falls through
+  // to the browser's normal paste.
+  function handleCoordinatePaste(event) {
+    const pair = COORDINATE_PAIR.exec(event.clipboardData.getData('text'))
+    if (!pair) return
+
+    event.preventDefault()
+    setForm((current) => ({ ...current, lat: pair[1], lng: pair[2] }))
   }
 
   // Sends the node to the API. The numeric fields are converted here because the inputs
@@ -180,6 +220,7 @@ export default function NodeFormModal({ node, onClose, onSaved }) {
                   placeholder="6.9271"
                   value={form.lat}
                   onChange={(e) => setField('lat', e.target.value)}
+                  onPaste={handleCoordinatePaste}
                   isInvalid={Boolean(fieldError(error?.errors, 'Lat'))}
                   disabled={saving}
                   required
@@ -199,6 +240,7 @@ export default function NodeFormModal({ node, onClose, onSaved }) {
                   placeholder="79.8612"
                   value={form.lng}
                   onChange={(e) => setField('lng', e.target.value)}
+                  onPaste={handleCoordinatePaste}
                   isInvalid={Boolean(fieldError(error?.errors, 'Lng'))}
                   disabled={saving}
                   required
@@ -210,6 +252,32 @@ export default function NodeFormModal({ node, onClose, onSaved }) {
                   The map plots this node from these two values.
                 </Form.Text>
               </Form.Group>
+            </Col>
+
+            {/* Checking the point before saving. A wrong longitude is still a
+                real place, so no amount of validation will catch it — only
+                looking does. This is an ordinary link, not an embedded map: no
+                key, no library, and nothing added to the bundle. */}
+            <Col md={12} className="mt-0">
+              <div className="d-flex flex-wrap gap-3 align-items-center">
+                {isPlottable(form.lat, form.lng) ? (
+                  <a
+                    href={`https://www.google.com/maps?q=${form.lat},${form.lng}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Preview this location on a map &#8599;
+                  </a>
+                ) : (
+                  <span className="text-secondary small">
+                    Enter both coordinates to preview the location.
+                  </span>
+                )}
+                <span className="text-secondary small">
+                  You can paste a whole pair like <code>6.9271, 79.8612</code> into
+                  either box.
+                </span>
+              </div>
             </Col>
 
             <Col md={6}>
