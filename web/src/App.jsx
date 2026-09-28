@@ -8,9 +8,9 @@
  */
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import ComingSoon from './components/ComingSoon'
-import HomeRedirect from './components/HomeRedirect'
 import ProtectedRoute from './components/ProtectedRoute'
 import AppLayout from './layouts/AppLayout'
+import HomePage from './pages/HomePage'
 import ForbiddenPage from './pages/auth/ForbiddenPage'
 import LoginPage from './pages/auth/LoginPage'
 import UseMobileAppPage from './pages/auth/UseMobileAppPage'
@@ -19,6 +19,7 @@ import OperatorHomePage from './pages/home/OperatorHomePage'
 import PendingActivationsPage from './pages/users/PendingActivationsPage'
 import ProsumersPage from './pages/users/ProsumersPage'
 import WebUsersPage from './pages/users/WebUsersPage'
+import NodesPage from './pages/nodes/NodesPage'
 import NotFoundPage from './pages/NotFoundPage'
 import { ROLES } from './utils/roles'
 
@@ -31,18 +32,10 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Public */}
+        {/* Public — no token required. The landing page is what a visitor sees first,
+            and it offers a signed-in visitor a link onward to their own home. */}
+        <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
-
-        {/* "/" → role home for now; M2's public landing page will take this path. */}
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <HomeRedirect />
-            </ProtectedRoute>
-          }
-        />
 
         {/* Prosumers have no web screens — they are pointed to the Android app. */}
         <Route element={<ProtectedRoute roles={[PROSUMER]} />}>
@@ -70,8 +63,8 @@ export default function App() {
             <Route element={<ProtectedRoute roles={STAFF} />}>
               {/* M1 */}
               <Route path="/prosumers" element={<ProsumersPage />} />
-              {/* M2 — proposed path */}
-              <Route path="/nodes" element={<ComingSoon title="Nodes" owner="M2" />} />
+              {/* Microgrid nodes and their booking windows */}
+              <Route path="/nodes" element={<NodesPage />} />
               {/* M3 — proposed path */}
               <Route
                 path="/reservations"
