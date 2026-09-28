@@ -43,7 +43,24 @@
             android:id="@+id/homeContent"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical" />
+            android:orientation="vertical">
+
+            <!-- Reservations (M3). -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonBookSlot"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:text="@string/action_book_slot" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonMyBookings"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:text="@string/action_my_bookings" />
+        </LinearLayout>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/buttonLogout"

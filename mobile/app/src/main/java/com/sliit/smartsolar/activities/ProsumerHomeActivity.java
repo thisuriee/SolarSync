@@ -20,7 +20,7 @@ import com.sliit.smartsolar.utils.SessionManager;
 
 public class ProsumerHomeActivity extends AppCompatActivity {
 
-    // Wires My profile and logout.
+    // Wires My profile, the reservation entry points (M3) and logout.
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -28,6 +28,10 @@ public class ProsumerHomeActivity extends AppCompatActivity {
 
         findViewById(R.id.buttonMyProfile).setOnClickListener(v ->
                 startActivity(new Intent(this, MyProfileActivity.class)));
+        findViewById(R.id.buttonBookSlot).setOnClickListener(v ->
+                startActivity(new Intent(this, SlotSearchActivity.class)));
+        findViewById(R.id.buttonMyBookings).setOnClickListener(v ->
+                startActivity(new Intent(this, MyBookingsActivity.class)));
         findViewById(R.id.buttonLogout).setOnClickListener(v -> SessionManager.logout(this));
     }
 
