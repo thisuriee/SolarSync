@@ -34,7 +34,26 @@
             android:id="@+id/homeContent"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical" />
+            android:orientation="vertical">
+
+            <!-- Microgrid nodes: where the hubs are and how far away. -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonNearbyNodes"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:text="@string/action_nearby_nodes" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonNodeList"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:text="@string/action_node_list" />
+
+        </LinearLayout>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/buttonLogout"

@@ -17,7 +17,10 @@
         <domain includeSubdomains="false">172.22.243.99</domain>
         <!-- Local dev over a real device on the same LAN -->
         <domain includeSubdomains="false">localhost</domain>
-        <!-- M2's dev machine on the LAN — physical-device testing -->
+        <!-- Dev machine on the LAN, physical-device testing. Both adapters are
+             listed because the router hands each of them its own address and
+             either may be the one the phone reaches. -->
         <domain includeSubdomains="false">192.168.1.2</domain>
+        <domain includeSubdomains="false">192.168.1.5</domain>
     </domain-config>
 </network-security-config>

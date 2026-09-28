@@ -128,4 +128,42 @@
     <string name="edit_chosen_slot">%1$s · %2$s</string>
     <string name="cancel_confirm_title">Cancel this booking?</string>
     <string name="cancel_confirm_body">%1$s at %2$s. A cancelled booking cannot be restored.</string>
+
+    <!-- Microgrid nodes and the nearby map. Only labels and navigation text
+         live here: every rule-failure message the user reads is the API's own
+         detail, and every coordinate comes from the API's response. -->
+    <string name="action_nearby_nodes">Nearby nodes</string>
+    <string name="map_title">Nearby nodes</string>
+    <string name="map_locating">Finding your location…</string>
+    <string name="map_loading_nodes">Loading nearby nodes…</string>
+    <string name="map_permission_denied">Location access is needed to find nodes near you.</string>
+    <string name="map_no_fix">Your location could not be determined. Check that location is switched on and try again.</string>
+    <string name="map_no_nodes">No nodes in service within %1$d km</string>
+    <string name="map_radius_10">10 km</string>
+    <string name="map_radius_25">25 km</string>
+    <string name="map_radius_50">50 km</string>
+    <string name="map_radius_100">100 km</string>
+    <string name="map_widen_hint">Try a wider search.</string>
+    <string name="action_retry">Try again</string>
+    <string name="action_open_settings">Open settings</string>
+    <string name="node_detail_title">Node details</string>
+    <string name="action_node_list">All nodes</string>
+    <string name="nodes_title">Microgrid nodes</string>
+    <string name="nodes_none">No microgrid nodes are in service.</string>
+    <string name="nodes_last_updated">Showing saved data from %1$s</string>
+    <string name="nodes_offline">Showing saved data. The server could not be reached.</string>
+    <string name="node_row_capacity">%1$.1f kWh · %2$d battery slots</string>
+    <string name="node_address">%1$s, %2$s</string>
+    <string name="node_coordinates">%1$.4f, %2$.4f</string>
+    <string name="node_distance">%1$.2f km away</string>
+    <string name="node_capacity">%1$.1f kWh</string>
+    <string name="node_open_windows">%1$d open of %2$d</string>
+    <string name="node_label_capacity">Capacity</string>
+    <string name="node_label_battery_slots">Battery slots</string>
+    <string name="node_label_windows">Booking windows</string>
+
+    <plurals name="map_node_count">
+        <item quantity="one">1 node within %2$d km</item>
+        <item quantity="other">%1$d nodes within %2$d km</item>
+    </plurals>
 </resources>
