@@ -54,19 +54,23 @@ builder.Services.AddScoped<IQrService, QrService>();
 // Microgrid nodes and booking windows.
 builder.Services.AddScoped<INodeService, NodeService>();
 
-// The shared active-reservation predicate (docs/api-contract.md §6).
-// ReservationQueries is an interim implementation: when ReservationService
-// implements IReservationQueries, repoint this one line and delete the class.
-// NodeService depends on the interface, so nothing else changes.
-builder.Services.AddScoped<IReservationQueries>(sp =>
-    new ReservationQueries(sp.GetRequiredService<MongoContext>().Reservations));
+// Reservation workflow (M3). SlotCapacityRepository is the only writer of
+// reservedCount. ReservationService is registered once and exposed through
+// all three interfaces, so the shared active-reservation predicate
+// (docs/api-contract.md §6) has exactly one implementation: NodeService
+// (IReservationQueries) and UserService (IProsumerReservationCounter) both
+// resolve to the same instance per request.
+builder.Services.AddScoped<ISlotCapacityRepository>(sp =>
+    new SlotCapacityRepository(sp.GetRequiredService<MongoContext>().Slots));
+builder.Services.AddScoped<ReservationService>();
+builder.Services.AddScoped<IReservationService>(sp => sp.GetRequiredService<ReservationService>());
+builder.Services.AddScoped<IReservationQueries>(sp => sp.GetRequiredService<ReservationService>());
+builder.Services.AddScoped<IProsumerReservationCounter>(sp => sp.GetRequiredService<ReservationService>());
 
 // Identity (M1): PBKDF2 hasher from docs/auth.md, stateless so a singleton.
 builder.Services.AddSingleton<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
-// TEMPORARY: swap for M3's CountActiveForProsumer implementation when it lands.
-builder.Services.AddScoped<IProsumerReservationCounter, ProsumerReservationCounterStub>();
 
 // Singleton: the scan-to-complete handshake spans two requests, so the store
 // must outlive a single scoped QrService instance.
