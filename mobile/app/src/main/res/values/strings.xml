@@ -11,4 +11,169 @@
     <string name="qr_expires">Valid until %1$s</string>
     <string name="qr_back">Back to list</string>
     <string name="qr_slot">%1$s – %2$s</string>
+    <!-- Identity (M1). Only form hints and navigation text live here: every
+         rule-failure message shown to the user is the API's own detail. -->
+    <string name="app_title">SmartSolar</string>
+    <string name="login_subtitle">Sign in as a Prosumer or Grid Operator</string>
+    <string name="label_username">Username</string>
+    <string name="label_password">Password</string>
+    <string name="action_login">Log in</string>
+    <string name="action_logout">Log out</string>
+    <string name="error_required">Required</string>
+    <string name="error_unexpected_response">The server sent a response the app could not read.</string>
+    <string name="login_use_web_portal">Backoffice accounts use the web portal.</string>
+    <string name="home_welcome">Welcome, %1$s</string>
+    <string name="home_prosumer_role">Prosumer · NIC %1$s</string>
+    <string name="home_operator_role">Grid Operator</string>
+
+    <!-- Registration (M1). Field-shape messages mirror the API's
+         RegisterProsumerRequest annotations; NIC format, NIC/username/email
+         uniqueness messages always come from the API's detail. -->
+    <string name="register_title">Create a prosumer account</string>
+    <string name="register_subtitle">A Backoffice officer activates new accounts before first login.</string>
+    <string name="register_link">New prosumer? Create an account</string>
+    <string name="register_have_account">Already registered? Log in</string>
+    <string name="label_nic">NIC</string>
+    <string name="label_full_name">Full name</string>
+    <string name="label_email">Email</string>
+    <string name="label_phone">Phone</string>
+    <string name="label_address">Address</string>
+    <string name="label_confirm_password">Confirm password</string>
+    <string name="action_register">Register</string>
+    <string name="action_back_to_login">Back to login</string>
+    <string name="error_full_name">Full name must be 2–100 characters.</string>
+    <string name="error_email">Enter a valid email address.</string>
+    <string name="error_phone">Phone must be 9–15 digits, optionally starting with +.</string>
+    <string name="error_address">Address must be 3–200 characters.</string>
+    <string name="error_username">Username must be 3–30 letters, digits, dots or underscores.</string>
+    <string name="error_password">Password must be at least 8 characters.</string>
+    <string name="error_password_mismatch">Passwords do not match.</string>
+    <string name="register_success_title">Registration received</string>
+    <string name="register_success_status">NIC %1$s · Status: %2$s</string>
+    <string name="register_success_body">A Backoffice officer must activate your account before you can log in. Until then, logging in shows the reason from the server.</string>
+
+    <!-- My Profile + self-deactivation (M1). The outcome of each action comes
+         from the API; rule failures show the API's detail. -->
+    <string name="action_my_profile">My profile</string>
+    <string name="profile_title">My profile</string>
+    <string name="profile_nic">NIC: %1$s</string>
+    <string name="profile_username">Username: %1$s</string>
+    <string name="profile_status">Status: %1$s</string>
+    <string name="profile_saved">Profile updated.</string>
+    <string name="action_edit_profile">Edit profile</string>
+    <string name="action_save">Save</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_deactivate_account">Deactivate my account</string>
+    <string name="deactivate_confirm_title">Deactivate your account?</string>
+    <string name="deactivate_confirm_body">You will be signed out and cannot log in again until a Backoffice officer reactivates the account. The server refuses this while you have active reservations.</string>
+    <string name="action_deactivate">Deactivate</string>
+    <string name="deactivated_title">Account deactivated</string>
+    <string name="deactivated_status">Status: %1$s · requested %2$s</string>
+    <string name="deactivated_body">You have been signed out. Only a Backoffice officer can reactivate this account.</string>
+
+    <!-- Reservations (M3). Labels and navigation text only. No rule numbers
+         (7 days, 12 hours) appear here on purpose: every rule failure shows
+         the API's detail, so the rules live in ReservationService alone. -->
+    <string name="action_book_slot">Book a slot</string>
+    <string name="action_my_bookings">My bookings</string>
+    <string name="action_home">Home</string>
+    <string name="action_refresh">Refresh</string>
+    <string name="action_book">Book this slot</string>
+    <string name="action_choose_slot">Choose another slot</string>
+    <string name="action_save_changes">Save changes</string>
+    <string name="action_cancel_booking">Cancel booking</string>
+    <string name="action_keep_booking">Keep booking</string>
+
+    <string name="label_node">Node</string>
+    <string name="label_slot">Slot</string>
+    <string name="label_energy">Energy (kWh)</string>
+    <string name="label_spaces_left">Spaces left</string>
+    <string name="label_reference">Reference</string>
+    <string name="label_status">Status</string>
+    <string name="label_booked_at">Booked</string>
+    <string name="label_updated_at">Last updated</string>
+    <string name="label_approved_at">Approved</string>
+    <string name="label_rejection_reason">Rejection reason</string>
+    <string name="label_cancelled_at">Cancelled</string>
+    <string name="label_completed_at">Completed</string>
+
+    <string name="reservation_energy_value">%1$s kWh</string>
+    <string name="reservation_node_fallback">Node …%1$s</string>
+    <string name="duration_days_hours">%1$d d %2$d h</string>
+    <string name="duration_hours_minutes">%1$d h %2$d min</string>
+    <string name="error_energy_number">Enter the energy as a number, e.g. 2.5</string>
+
+    <string name="slot_search_title">Find a slot</string>
+    <string name="slot_pick_title">Choose a new slot</string>
+    <string name="slot_search_subtitle">Windows open for booking right now, in your local time. Spaces are live and re-checked when you book.</string>
+    <string name="slot_search_all_nodes">All nodes</string>
+    <string name="slot_search_empty">No bookable windows for this choice right now.</string>
+    <string name="slot_capacity_line">%1$d of %2$d spaces left · up to %3$s</string>
+    <string name="slot_spaces_value">%1$d of %2$d</string>
+
+    <string name="create_title">Book energy</string>
+    <string name="create_energy_helper">This window offers up to %1$s per booking.</string>
+
+    <string name="summary_created_title">Booking received</string>
+    <string name="summary_created_message">Your booking is pending until a grid operator approves it. You can change or cancel it from My bookings.</string>
+    <string name="summary_updated_title">Booking updated</string>
+    <string name="summary_updated_message">The server saved your changes. These are the booking\'s details now.</string>
+    <string name="summary_cancelled_title">Booking cancelled</string>
+    <string name="summary_cancelled_message">The booking is cancelled and its space has been released for other prosumers.</string>
+
+    <string name="my_bookings_title">My bookings</string>
+    <string name="my_bookings_empty">You have no bookings yet.</string>
+    <string name="my_bookings_pending">Pending approval (%1$d)</string>
+    <string name="my_bookings_approved">Approved (%1$d)</string>
+    <string name="my_bookings_closed">Past and closed (%1$d)</string>
+    <string name="booking_meta_line">%1$s · %2$s · Ref %3$s</string>
+
+    <string name="edit_title">Booking</string>
+    <string name="edit_starts_in">Starts in %1$s</string>
+    <string name="edit_started">This slot has already started.</string>
+    <string name="edit_audit_header">History</string>
+    <string name="edit_closed">This booking is closed and can no longer be changed.</string>
+    <string name="edit_change_header">Change or cancel</string>
+    <string name="edit_notice">Changes and cancellations close a set time before the slot starts. If it is too late, the server says so here.</string>
+    <string name="edit_chosen_slot">%1$s · %2$s</string>
+    <string name="cancel_confirm_title">Cancel this booking?</string>
+    <string name="cancel_confirm_body">%1$s at %2$s. A cancelled booking cannot be restored.</string>
+
+    <!-- Microgrid nodes and the nearby map. Only labels and navigation text
+         live here: every rule-failure message the user reads is the API's own
+         detail, and every coordinate comes from the API's response. -->
+    <string name="action_nearby_nodes">Nearby nodes</string>
+    <string name="map_title">Nearby nodes</string>
+    <string name="map_locating">Finding your location…</string>
+    <string name="map_loading_nodes">Loading nearby nodes…</string>
+    <string name="map_permission_denied">Location access is needed to find nodes near you.</string>
+    <string name="map_no_fix">Your location could not be determined. Check that location is switched on and try again.</string>
+    <string name="map_no_nodes">No nodes in service within %1$d km</string>
+    <string name="map_radius_10">10 km</string>
+    <string name="map_radius_25">25 km</string>
+    <string name="map_radius_50">50 km</string>
+    <string name="map_radius_100">100 km</string>
+    <string name="map_widen_hint">Try a wider search.</string>
+    <string name="action_retry">Try again</string>
+    <string name="action_open_settings">Open settings</string>
+    <string name="node_detail_title">Node details</string>
+    <string name="action_node_list">All nodes</string>
+    <string name="nodes_title">Microgrid nodes</string>
+    <string name="nodes_none">No microgrid nodes are in service.</string>
+    <string name="nodes_last_updated">Showing saved data from %1$s</string>
+    <string name="nodes_offline">Showing saved data. The server could not be reached.</string>
+    <string name="node_row_capacity">%1$.1f kWh · %2$d battery slots</string>
+    <string name="node_address">%1$s, %2$s</string>
+    <string name="node_coordinates">%1$.4f, %2$.4f</string>
+    <string name="node_distance">%1$.2f km away</string>
+    <string name="node_capacity">%1$.1f kWh</string>
+    <string name="node_open_windows">%1$d open of %2$d</string>
+    <string name="node_label_capacity">Capacity</string>
+    <string name="node_label_battery_slots">Battery slots</string>
+    <string name="node_label_windows">Booking windows</string>
+
+    <plurals name="map_node_count">
+        <item quantity="one">1 node within %2$d km</item>
+        <item quantity="other">%1$d nodes within %2$d km</item>
+    </plurals>
 </resources>

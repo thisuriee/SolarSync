@@ -8,6 +8,8 @@
  */
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
@@ -15,6 +17,7 @@ using MongoDB.Driver;
 using SmartSolar.Api.Configuration;
 using SmartSolar.Api.Helpers;
 using SmartSolar.Api.Middleware;
+using SmartSolar.Api.Models;
 using SmartSolar.Api.Repositories;
 using SmartSolar.Api.Services;
 
@@ -44,7 +47,30 @@ builder.Services.AddScoped<IUserRepository>(sp =>
     new UserRepository(sp.GetRequiredService<MongoContext>().Users));
 builder.Services.AddScoped<IStationRepository>(sp =>
     new StationRepository(sp.GetRequiredService<MongoContext>().Stations));
+builder.Services.AddScoped<ISlotRepository>(sp =>
+    new SlotRepository(sp.GetRequiredService<MongoContext>().Slots));
 builder.Services.AddScoped<IQrService, QrService>();
+
+// Microgrid nodes and booking windows.
+builder.Services.AddScoped<INodeService, NodeService>();
+builder.Services.AddScoped<ISlotService, SlotService>();
+
+// Reservation workflow (M3). SlotCapacityRepository is the only writer of
+// reservedCount. ReservationService is registered once and exposed through
+// both interfaces, so the shared active-reservation predicate
+// (docs/api-contract.md §6) has exactly one implementation: NodeService,
+// SlotService and UserService (IReservationQueries) resolve to the same
+// instance per request.
+builder.Services.AddScoped<ISlotCapacityRepository>(sp =>
+    new SlotCapacityRepository(sp.GetRequiredService<MongoContext>().Slots));
+builder.Services.AddScoped<ReservationService>();
+builder.Services.AddScoped<IReservationService>(sp => sp.GetRequiredService<ReservationService>());
+builder.Services.AddScoped<IReservationQueries>(sp => sp.GetRequiredService<ReservationService>());
+
+// Identity (M1): PBKDF2 hasher from docs/auth.md, stateless so a singleton.
+builder.Services.AddSingleton<IPasswordHasher<User>, PasswordHasher<User>>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IUserService, UserService>();
 
 // Singleton: the scan-to-complete handshake spans two requests, so the store
 // must outlive a single scoped QrService instance.
@@ -81,6 +107,9 @@ builder.Services
     });
 
 builder.Services.AddAuthorization();
+// Failed [Authorize] checks return the problem object (AUTH_FORBIDDEN_ROLE /
+// AUTH_INVALID_TOKEN) instead of an empty 401/403 body.
+builder.Services.AddSingleton<IAuthorizationMiddlewareResultHandler, ProblemAuthorizationResultHandler>();
 builder.Services.AddSingleton<JwtTokenGenerator>();
 
 // ---- §4 CORS — origins come from configuration so IIS differs from dev

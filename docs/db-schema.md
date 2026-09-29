@@ -22,7 +22,7 @@ All three roles live here, discriminated by `role`.
 | Field | Type | Required | Notes |
 |---|---|---|---|
 | `_id` | ObjectId | ✓ | |
-| `nic` | string | Prosumer only | **Unique sparse index.** Null for web users. **Immutable after creation** — the API never accepts it in an update body |
+| `nic` | string | Prosumer only | **Unique partial index.** Null for web users. Old (`9 digits + V/X`) or new (`12 digits`) format, stored upper-case — see `api-contract.md` §2. **Immutable after creation** — the API never accepts it in an update body |
 | `username` | string | ✓ | **Unique index.** Login identifier for all three roles |
 | `fullName` | string | ✓ | |
 | `email` | string | ✓ | Unique index |
@@ -32,6 +32,7 @@ All three roles live here, discriminated by `role`.
 | `role` | string enum | ✓ | `Backoffice` \| `GridOperator` \| `Prosumer` |
 | `status` | string enum | ✓ | `Pending` \| `Active` \| `Deactivated` |
 | `deactivationRequestedAt` | date? | | Set by the prosumer self-service request |
+| `deactivationReason` | string? | | Optional note from `PATCH /prosumers/{nic}/deactivate` (Backoffice). Cleared on reactivation |
 | `activatedBy` | ObjectId? | | `_id` of the Backoffice officer — the audit evidence for the Backoffice-only reactivation rule |
 | `activatedAt` | date? | | |
 | `createdAt` / `updatedAt` | date | ✓ | UTC |
@@ -40,7 +41,7 @@ All three roles live here, discriminated by `role`.
 
 | Index | Type | Why |
 |---|---|---|
-| `{nic: 1}` | unique, sparse | NIC as the business primary key. Sparse so web users with no NIC don't collide on null |
+| `{nic: 1}` | unique, partial (`nic` is a string) | NIC as the business primary key. Partial, not sparse: web users store `nic: null`, and a sparse index still indexes an explicit null, so the second web user would collide |
 | `{username: 1}` | unique | Login lookup |
 | `{email: 1}` | unique | |
 | `{role: 1, status: 1}` | compound | Drives `/prosumers/pending` and the user-management filters |
@@ -71,8 +72,26 @@ The microgrid nodes.
 
 | Index | Type | Why |
 |---|---|---|
-| `{location: "2dsphere"}` | geospatial | `/nodes/nearby` server-side distance |
+| `{location: "2dsphere"}` | geospatial | `/nodes/nearby` server-side distance. **Required, not an optimisation** — `$geoNear` refuses to run without it rather than falling back to a collection scan |
 | `{status: 1}` | single | Prosumer sees active nodes only |
+
+**Constraints the API enforces** — added when the node endpoints were built. No field
+was added, removed or renamed; this records what `NodeService` now guarantees about
+documents written through the API, so the seed script and the API agree.
+
+| Field | Guarantee | Violation |
+|---|---|---|
+| `location` | Written only by `NodeService`, which maps an inbound `lat`/`lng` pair into `[longitude, latitude]`. Clients never send GeoJSON | — |
+| `capacityKWh` | Strictly greater than 0 | `400 NODE_INVALID_CAPACITY` |
+| `totalBatterySlots` | At least 1, and **never reducible below the largest `totalCapacity` of any slot on this station** | `400 NODE_INVALID_CAPACITY` / `409 NODE_CAPACITY_CONFLICT` |
+| `status` | Set to `Active` on create and thereafter changed only by the activate/deactivate routes. Not accepted in a create or update body | — |
+| `operatingSchedule` | At least one row; each `dayOfWeek` appears at most once; `closeTime` strictly after `openTime`; both `HH:mm` 24-hour | `400 NODE_INVALID_SCHEDULE` |
+| `createdBy` | Taken from the caller's JWT `sub` claim. Not accepted in a request body | — |
+| `createdAt` / `updatedAt` | `DateTime.UtcNow`, server-side. `createdAt` is preserved across updates | — |
+
+> `status`, `createdBy` and `createdAt` are absent from `NodeCreateRequest` and
+> `NodeUpdateRequest` altogether. A field a client cannot bind is a rule that cannot be
+> broken by editing a request.
 
 ---
 
@@ -98,6 +117,32 @@ Bookable time windows belonging to a node. Separate collection, not embedded —
 |---|---|---|
 | `{stationId: 1, slotStart: 1}` | compound | Slot listing per node, ordered |
 | `{slotStart: 1}` | single | `/slots/available` 7-day window filter |
+
+**Constraints the API enforces** — added when the slot endpoints were built. No field was
+added, removed or renamed; this records what `SlotService` guarantees about documents
+written through the API.
+
+| Field | Guarantee | Violation |
+|---|---|---|
+| `stationId` | Taken from the route on create and carried over unchanged on update. A window cannot be moved to another node, which would silently relocate any booking on it | — |
+| `slotStart` / `slotEnd` | `slotEnd` strictly after `slotStart` | `400 SLOT_INVALID_WINDOW` |
+| window vs. siblings | No two windows on the same node may cover the same time. Ranges are **half-open**, so a window ending exactly as the next begins is adjacent, not overlapping | `409 SLOT_OVERLAP` |
+| `totalCapacity` | At least 1; never above the station's `totalBatterySlots`; never reduced below the slot's own `reservedCount` | `400 SLOT_INVALID_CAPACITY` · `409 NODE_CAPACITY_CONFLICT` · `409 SLOT_CAPACITY_CONFLICT` |
+| `energyPerSlotKWh` | Strictly greater than 0 | `400 SLOT_INVALID_CAPACITY` |
+| `reservedCount` | Set to 0 on create and **never written again by slot CRUD**. Update rebuilds the document from the stored value | — |
+| `status` | Set to `Open` on create and never written again by slot CRUD | — |
+| `createdAt` / `updatedAt` | `DateTime.UtcNow`, server-side. `createdAt` preserved across updates | — |
+| deletion | Refused while any reservation references the slot — active ones because someone is relying on them, historical ones because their `slotId` would be left dangling | `409 SLOT_HAS_RESERVATIONS` |
+
+> `reservedCount` and `status` appear on neither `SlotCreateRequest` nor `SlotUpdateRequest`.
+> A field a client cannot bind cannot be applied, which is why the contract's "ignored in
+> request bodies" needs no defensive code to honour.
+
+**A slot is only offered for booking when its station is `Active`.** `/slots/available`
+filters on the parent station's status as well as the slot's own, so taking a node out of
+service withdraws its windows from the booking list without anything being written to them.
+Slot documents are never touched by a node status change — the node's status is the single
+place that fact is recorded.
 
 ---
 

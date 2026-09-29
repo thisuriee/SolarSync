@@ -15,7 +15,7 @@ val localProperties = Properties().apply {
 
 val apiBaseUrl = localProperties.getProperty(
     "API_BASE_URL",
-    "http://10.0.2.2:5046/api"
+    "http://10.0.2.2:5199/api"
 )
 
 // Injected into the manifest via ${MAPS_API_KEY}. Empty is tolerated so the
@@ -65,6 +65,9 @@ dependencies {
     // QR encoding only. Scanning (operator mode) needs a camera-backed library,
     // which is a separate decision.
     implementation(libs.zxing.core)
+    // Google Maps and the fused location provider, for the nearby-nodes map.
+    implementation(libs.play.services.maps)
+    implementation(libs.play.services.location)
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)

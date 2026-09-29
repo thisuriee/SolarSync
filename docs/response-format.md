@@ -54,18 +54,41 @@ Every code is owned by one member and added here as it is implemented. **This re
 | `AUTH_ACCOUNT_PENDING` | 403 | M1 | Registered but not yet activated by Backoffice |
 | `AUTH_ACCOUNT_DEACTIVATED` | 403 | M1 | Needs Backoffice reactivation |
 | `AUTH_FORBIDDEN_ROLE` | 403 | M1 | Role lacks permission, or touching another user's data |
+| `AUTH_INVALID_TOKEN` | 401 | M1 | No token, expired/invalid token (framework challenge), token missing a required claim, or its user no longer exists. Clients: clear session, go to login |
+| `USER_NIC_INVALID` | 400 | M1 | NIC is not 9 digits + V/X (old) or 12 digits (new) |
 | `USER_NIC_EXISTS` | 409 | M1 | Duplicate NIC at registration |
+| `USER_USERNAME_EXISTS` | 409 | M1 | Username already taken (compared case-insensitively) |
+| `USER_EMAIL_EXISTS` | 409 | M1 | Email already registered (compared case-insensitively) |
+| `USER_NOT_FOUND` | 404 | M1 | No web user with that id / no prosumer with that NIC. Never used to hide a 403 |
+| `USER_ROLE_INVALID` | 400 | M1 | Role not allowed on the route — e.g. `Prosumer` sent to `/webusers` |
+| `USER_STATUS_INVALID` | 400 | M1 | Status not allowed on the route — web users are `Active` or `Deactivated` only |
 | `USER_LAST_BACKOFFICE` | 409 | M1 | Cannot demote or disable the final Backoffice account |
 | `USER_HAS_ACTIVE_RESERVATIONS` | 409 | M1 | Prosumer deactivation blocked |
+| `NODE_NOT_FOUND` | 404 | M2 | No node with that id, or the id is not a valid ObjectId |
+| `NODE_INVALID_COORDINATES` | 400 | M2 | Latitude outside ±90 or longitude outside ±180 |
+| `NODE_INVALID_CAPACITY` | 400 | M2 | `capacityKWh` not greater than 0, or `totalBatterySlots` below 1 |
+| `NODE_INVALID_SCHEDULE` | 400 | M2 | Empty schedule, a repeated `dayOfWeek`, or a close time not after its open time |
+| `NODE_INVALID_STATUS_FILTER` | 400 | M2 | `?status=` is not `Active` or `Inactive` |
+| `NODE_INVALID_RADIUS` | 400 | M2 | `radiusKm` on the proximity search is not positive, or exceeds the maximum search radius |
 | `NODE_HAS_ACTIVE_RESERVATIONS` | 409 | M2 | Node deactivation blocked — include the count in `detail` |
 | `NODE_CAPACITY_CONFLICT` | 409 | M2 | Battery slot count would drop below what is already reserved |
-| `SLOT_OVERLAP` | 409 | M2 | Overlapping slot window on the same node |
-| `SLOT_HAS_RESERVATIONS` | 409 | M2 | Slot deletion blocked |
+| `SLOT_NOT_FOUND` | 404 | M2 | No booking slot with that id, or the id is not a valid ObjectId |
+| `SLOT_INVALID_WINDOW` | 400 | M2 | `slotEnd` is not after `slotStart` |
+| `SLOT_INVALID_CAPACITY` | 400 | M2 | `totalCapacity` below 1, or `energyPerSlotKWh` not greater than 0 |
+| `SLOT_OVERLAP` | 409 | M2 | Overlapping slot window on the same node. Ranges are half-open, so windows that merely touch are allowed |
+| `SLOT_CAPACITY_CONFLICT` | 409 | M2 | `totalCapacity` would drop below the slot's current `reservedCount` |
+| `SLOT_HAS_RESERVATIONS` | 409 | M2 | Slot deletion blocked — by an active reservation, or by historical ones whose `slotId` would be left dangling |
 | `RESERVATION_OUTSIDE_WINDOW` | 422 | M3 | Slot start is more than 7 days from now |
 | `RESERVATION_NOTICE_PERIOD` | 409 | M3 | Update or cancel attempted inside 12 hours |
 | `RESERVATION_SLOT_FULL` | 409 | M3 | No remaining capacity on the slot |
 | `RESERVATION_DUPLICATE` | 409 | M3 | Same NIC already holds an active booking on this slot |
-| `RESERVATION_INVALID_STATE` | 409 | M3 | Illegal status transition |
+| `RESERVATION_INVALID_STATE` | 409 | M3 | Illegal status transition, an update on a booking that is no longer `Pending`/`Approved`, or the booking was changed by another request first (compare-and-set lost) |
+| `RESERVATION_NOT_FOUND` | 404 | M3 | No reservation with that id, or the id is not a valid ObjectId (also thrown by M4's QR issue) |
+| `SLOT_NOT_FOUND` | 404 | M3 | The `slotId` in a create/update body does not exist, or is not a valid ObjectId |
+| `RESERVATION_PROSUMER_INACTIVE` | 409 | M3 | The prosumer being booked for is not `Active` |
+| `RESERVATION_NODE_INACTIVE` | 409 | M3 | The slot's node is not `Active` |
+| `RESERVATION_INVALID_ENERGY` | 400 | M3 | `energyKWh` not greater than 0, or above the slot's `energyPerSlotKWh` |
+| `RESERVATION_INVALID_STATUS_FILTER` | 400 | M3 | `?status=` on `/reservations` or `/reservations/mine` is not one of the five reservation statuses |
 | `QR_INVALID` | 400 | M4 | Token hash does not match any reservation |
 | `QR_EXPIRED` | 410 | M4 | Past `qrExpiresAt` |
 | `QR_ALREADY_USED` | 409 | M4 | Reservation is no longer `Approved` |

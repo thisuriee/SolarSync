@@ -4,7 +4,13 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
 
+    <!-- The nearby-nodes map asks where the phone is so the API can measure
+         from there. Coarse is enough: the search radius is kilometres wide. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
     <application
+        android:name=".SmartSolarApplication"
         android:networkSecurityConfig="@xml/network_security_config"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -17,6 +23,12 @@
         tools:targetApi="31">
         <activity
             android:name=".MainActivity"
+            android:exported="false" />
+
+        <!-- Identity (M1): login is the entry point; it restores a saved
+             session and routes by role. -->
+        <activity
+            android:name=".activities.LoginActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -24,6 +36,51 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".activities.RegisterProsumerActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activities.ProsumerHomeActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activities.MyProfileActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activities.OperatorHomeActivity"
+            android:exported="false" />
+
+        <!-- Reservations (M3). Not exported: reachable only from the app's
+             own screens after login. -->
+        <activity
+            android:name=".activities.SlotSearchActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activities.CreateReservationActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activities.ReservationSummaryActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activities.MyBookingsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activities.EditReservationActivity"
+            android:exported="false" />
+
+        <!-- Microgrid nodes: the nearby map and a node's details. Not
+             exported: reachable only from the app's own screens after login. -->
+        <activity
+            android:name=".activities.NearbyNodesMapActivity"
+            android:exported="false"
+            android:label="@string/map_title" />
+        <activity
+            android:name=".activities.NodeListActivity"
+            android:exported="false"
+            android:label="@string/nodes_title" />
+        <activity
+            android:name=".activities.NodeDetailActivity"
+            android:exported="false"
+            android:label="@string/node_detail_title" />
 
         <activity
             android:name=".activities.QrDisplayActivity"

@@ -1,0 +1,261 @@
+# =============================================================================
+# File:    Reservations.http
+# Author:  Thisuri
+# Created: 2026-09-27
+# Purpose: Manual test script for the M3 Reservation API
+#          (docs/api-contract.md §4). Run with the VS Code "REST Client"
+#          extension (humao.rest-client): click "Send Request" above each one.
+#          Every request states the result it must produce (EXPECT ...).
+#
+# Needs a fresh seed (docs/seed/seed-database.js) — slot times are relative
+# to when the seed ran. Run A first; later sections reuse its tokens and the
+# id captured from B1. The automated edge cases (exactly 7 days, concurrent
+# last space, double cancel) are in SmartSolar.Api.Tests/ReservationFlowTests.
+# Section F cancels what this script created, so it can be re-run.
+# =============================================================================
+
+@base = http://localhost:5199/api
+@password = Test@1234
+
+@bo = {{loginBO.response.body.$.token}}
+@op = {{loginOP.response.body.$.token}}
+@p1 = {{loginP1.response.body.$.token}}
+
+# Seed data
+@otherNic = 200012345672
+@slot26h = 670000000000000000000002
+@slot50h = 670000000000000000000003
+@slot8h = 670000000000000000000001
+@slotCap1 = 670000000000000000000019
+@slot200h = 670000000000000000000020
+@slotInactiveNode = 670000000000000000000017
+
+@resId = {{create.response.body.$.id}}
+@res8h = {{create8h.response.body.$.id}}
+
+
+# =============================================================================
+# A. Logins
+# =============================================================================
+
+### A1 — EXPECT 200
+# @name loginBO
+POST {{base}}/auth/login
+Content-Type: application/json
+
+{ "username": "backoffice.admin", "password": "{{password}}" }
+
+### A2 — EXPECT 200
+# @name loginOP
+POST {{base}}/auth/login
+Content-Type: application/json
+
+{ "username": "operator.colombo", "password": "{{password}}" }
+
+### A3 — EXPECT 200
+# @name loginP1
+POST {{base}}/auth/login
+Content-Type: application/json
+
+{ "username": "nimal.perera", "password": "{{password}}" }
+
+
+# =============================================================================
+# B. Create (R1, duplicate, capacity)
+# =============================================================================
+
+### B1 Prosumer books a slot 26 h out — EXPECT 201, status Pending, Location header.
+# The body prosumerNIC is IGNORED for a prosumer: prosumerNIC in the response is the token's.
+# @name create
+POST {{base}}/reservations
+Authorization: Bearer {{p1}}
+Content-Type: application/json
+
+{ "slotId": "{{slot26h}}", "energyKWh": 10, "prosumerNIC": "{{otherNic}}" }
+
+### B2 Same slot again — EXPECT 409 RESERVATION_DUPLICATE
+POST {{base}}/reservations
+Authorization: Bearer {{p1}}
+Content-Type: application/json
+
+{ "slotId": "{{slot26h}}", "energyKWh": 5 }
+
+### B3 Slot 200 h (8+ days) out — EXPECT 422 RESERVATION_OUTSIDE_WINDOW
+POST {{base}}/reservations
+Authorization: Bearer {{p1}}
+Content-Type: application/json
+
+{ "slotId": "{{slot200h}}", "energyKWh": 5 }
+
+### B4 Slot on the Inactive node — EXPECT 409 RESERVATION_NODE_INACTIVE
+POST {{base}}/reservations
+Authorization: Bearer {{p1}}
+Content-Type: application/json
+
+{ "slotId": "{{slotInactiveNode}}", "energyKWh": 5 }
+
+### B5 Energy above the slot's 30 kWh — EXPECT 400 RESERVATION_INVALID_ENERGY
+POST {{base}}/reservations
+Authorization: Bearer {{p1}}
+Content-Type: application/json
+
+{ "slotId": "{{slot50h}}", "energyKWh": 31 }
+
+### B6 Backoffice books the capacity-1 slot for another prosumer — EXPECT 201 (slot flips to Full)
+POST {{base}}/reservations
+Authorization: Bearer {{bo}}
+Content-Type: application/json
+
+{ "slotId": "{{slotCap1}}", "energyKWh": 5, "prosumerNIC": "{{otherNic}}" }
+
+### B7 Prosumer tries the now-full slot — EXPECT 409 RESERVATION_SLOT_FULL
+POST {{base}}/reservations
+Authorization: Bearer {{p1}}
+Content-Type: application/json
+
+{ "slotId": "{{slotCap1}}", "energyKWh": 5 }
+
+### B8 Backoffice without prosumerNIC — EXPECT 400 USER_NIC_INVALID
+POST {{base}}/reservations
+Authorization: Bearer {{bo}}
+Content-Type: application/json
+
+{ "slotId": "{{slot50h}}", "energyKWh": 5 }
+
+### B9 Grid Operator cannot create — EXPECT 403 AUTH_FORBIDDEN_ROLE
+POST {{base}}/reservations
+Authorization: Bearer {{op}}
+Content-Type: application/json
+
+{ "slotId": "{{slot50h}}", "energyKWh": 5 }
+
+### B10 Book the slot starting in 8 h (allowed by R1) — EXPECT 201. Used by D2.
+# @name create8h
+POST {{base}}/reservations
+Authorization: Bearer {{p1}}
+Content-Type: application/json
+
+{ "slotId": "{{slot8h}}", "energyKWh": 5 }
+
+
+# =============================================================================
+# C. Reads
+# =============================================================================
+
+### C1 Own detail — EXPECT 200
+GET {{base}}/reservations/{{resId}}
+Authorization: Bearer {{p1}}
+
+### C2 Mine, Pending only — EXPECT 200 array (no nic parameter exists)
+GET {{base}}/reservations/mine?status=Pending
+Authorization: Bearer {{p1}}
+
+### C3 Staff search — EXPECT 200 {items, page, pageSize, totalCount, totalPages}
+GET {{base}}/reservations?status=Pending&page=1&pageSize=5
+Authorization: Bearer {{op}}
+
+### C4 Staff search by NIC (lower-case v/x is normalised) — EXPECT 200
+GET {{base}}/reservations?nic={{otherNic}}
+Authorization: Bearer {{bo}}
+
+### C5 Prosumer on the staff search — EXPECT 403 AUTH_FORBIDDEN_ROLE
+GET {{base}}/reservations
+Authorization: Bearer {{p1}}
+
+### C6 Unknown status filter — EXPECT 400 RESERVATION_INVALID_STATUS_FILTER
+GET {{base}}/reservations?status=Booked
+Authorization: Bearer {{op}}
+
+### C7 Malformed id — EXPECT 404 RESERVATION_NOT_FOUND
+GET {{base}}/reservations/not-an-id
+Authorization: Bearer {{p1}}
+
+
+# =============================================================================
+# D. Update (R2 on current, R1 + capacity on new)
+# =============================================================================
+
+### D1 Move B1 to the 50 h slot — EXPECT 200, slotId/slotStart changed
+PUT {{base}}/reservations/{{resId}}
+Authorization: Bearer {{p1}}
+Content-Type: application/json
+
+{ "slotId": "{{slot50h}}", "energyKWh": 12 }
+
+### D2 Update the 8 h booking — EXPECT 409 RESERVATION_NOTICE_PERIOD ("starts in 7 hour(s) ...")
+PUT {{base}}/reservations/{{res8h}}
+Authorization: Bearer {{p1}}
+Content-Type: application/json
+
+{ "slotId": "{{slot50h}}", "energyKWh": 5 }
+
+### D3 Move B1 to the full slot — EXPECT 409 RESERVATION_SLOT_FULL, booking unchanged (check C1)
+PUT {{base}}/reservations/{{resId}}
+Authorization: Bearer {{p1}}
+Content-Type: application/json
+
+{ "slotId": "{{slotCap1}}", "energyKWh": 5 }
+
+
+# =============================================================================
+# E. Approve / reject (GridOperator only)
+# =============================================================================
+
+### E1 Prosumer approves — EXPECT 403 AUTH_FORBIDDEN_ROLE
+PATCH {{base}}/reservations/{{resId}}/approve
+Authorization: Bearer {{p1}}
+
+### E2 Backoffice approves — EXPECT 403 AUTH_FORBIDDEN_ROLE
+PATCH {{base}}/reservations/{{resId}}/approve
+Authorization: Bearer {{bo}}
+
+### E3 Operator approves — EXPECT 200, status Approved, approvedBy + approvedAt set
+PATCH {{base}}/reservations/{{resId}}/approve
+Authorization: Bearer {{op}}
+
+### E4 Approve again — EXPECT 409 RESERVATION_INVALID_STATE
+PATCH {{base}}/reservations/{{resId}}/approve
+Authorization: Bearer {{op}}
+
+### E5 Reject an Approved booking — EXPECT 409 RESERVATION_INVALID_STATE
+PATCH {{base}}/reservations/{{resId}}/reject
+Authorization: Bearer {{op}}
+Content-Type: application/json
+
+{ "reason": "Grid maintenance" }
+
+### E6 Reject without a reason — EXPECT 400 (validation, errors.Reason)
+PATCH {{base}}/reservations/{{res8h}}/reject
+Authorization: Bearer {{op}}
+Content-Type: application/json
+
+{ }
+
+
+# =============================================================================
+# F. Cancel (R2) — also cleans up
+# =============================================================================
+
+### F1 Cancel the 8 h booking — EXPECT 409 RESERVATION_NOTICE_PERIOD
+PATCH {{base}}/reservations/{{res8h}}/cancel
+Authorization: Bearer {{p1}}
+
+### F2 Android-style cancel (POST + override) of B1 — EXPECT 200, status Cancelled, cancelledAt set
+POST {{base}}/reservations/{{resId}}/cancel
+Authorization: Bearer {{p1}}
+X-HTTP-Method-Override: PATCH
+
+### F3 Cancel B1 again — EXPECT 409 RESERVATION_INVALID_STATE (capacity NOT released twice)
+PATCH {{base}}/reservations/{{resId}}/cancel
+Authorization: Bearer {{p1}}
+
+### F4 Operator rejects the 8 h booking (reject has no 12 h rule) — EXPECT 200, capacity released
+PATCH {{base}}/reservations/{{res8h}}/reject
+Authorization: Bearer {{op}}
+Content-Type: application/json
+
+{ "reason": "Test clean-up" }
+
+# B6 (the capacity-1 slot for {{otherNic}}) is left in place: it is what makes
+# B7 and D3 demonstrate SLOT_FULL. Cancel it from the staff search (C4) with
+# Backoffice if you want the slot back to Open.
