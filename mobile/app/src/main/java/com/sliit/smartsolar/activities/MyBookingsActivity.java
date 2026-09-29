@@ -10,6 +10,7 @@
  */
 package com.sliit.smartsolar.activities;
 
+import android.content.ContentValues;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -22,6 +23,7 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.sliit.smartsolar.R;
+import com.sliit.smartsolar.database.BookingCache;
 import com.sliit.smartsolar.models.NodeOption;
 import com.sliit.smartsolar.models.Reservation;
 import com.sliit.smartsolar.models.ReservationStatuses;
@@ -38,13 +40,19 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class MyBookingsActivity extends AppCompatActivity {
 
     private LinearLayout listBookings;
-    private TextView textError, textEmpty;
+    private TextView textError, textEmpty, textStale;
     private ProgressBar progress;
+
+    // Read-through cache of the caller's own bookings. Written only after a
+    // successful read, read only when one fails, cleared on logout.
+    private BookingCache cache;
 
     /** Node names for display only; loaded once per screen. */
     private List<NodeOption> nodes;
@@ -58,7 +66,10 @@ public class MyBookingsActivity extends AppCompatActivity {
         listBookings = findViewById(R.id.listBookings);
         textError = findViewById(R.id.textError);
         textEmpty = findViewById(R.id.textEmpty);
+        textStale = findViewById(R.id.textStale);
         progress = findViewById(R.id.progress);
+
+        cache = new BookingCache(this);
 
         findViewById(R.id.buttonBookSlot).setOnClickListener(v ->
                 startActivity(new Intent(this, SlotSearchActivity.class)));
@@ -103,8 +114,8 @@ public class MyBookingsActivity extends AppCompatActivity {
         });
     }
 
-    // GET /reservations/mine — no status filter, so one call serves all
-    // three groups. Never read from a local cache: the API is the only source.
+    // GET /reservations/mine — no status filter, so one call serves all three
+    // groups. The API is always asked first; the cache is only ever a fallback.
     private void loadBookings() {
         hideMessages();
         setBusy(true);
@@ -114,7 +125,13 @@ public class MyBookingsActivity extends AppCompatActivity {
             public void onSuccess(String body) {
                 setBusy(false);
                 try {
-                    showBookings(ReservationParser.parseReservationList(body));
+                    List<Reservation> live = ReservationParser.parseReservationList(body);
+
+                    // Render the response, then snapshot it. The cache is written
+                    // only after the API answered, so it can never hold something
+                    // the server did not say.
+                    showBookings(live, null);
+                    cache.save(BookingCache.rowsFor(live, nodeNamesById()));
                 } catch (JSONException e) {
                     showError(getString(R.string.error_unexpected_response));
                 }
@@ -124,17 +141,67 @@ public class MyBookingsActivity extends AppCompatActivity {
             public void onError(String code, String detail) {
                 setBusy(false);
                 if (!SessionManager.handleAuthError(MyBookingsActivity.this, code, detail)) {
-                    showError(detail);
+                    fallBackToCache(detail);
                 }
             }
         });
     }
 
+    // The call failed. Show the last known bookings, labelled with when they
+    // were taken; otherwise the server's own message. A cached list is never
+    // presented as current — the label is what keeps it honest.
+    private void fallBackToCache(String detail) {
+        List<ContentValues> cached = cache.load();
+        String when = cache.lastRefreshedDisplay();
+
+        // Nothing has ever been cached, so the server's message is all there is.
+        // An empty list here would wrongly read as "you have no bookings".
+        if (cached.isEmpty() && when == null) {
+            showError(detail);
+            return;
+        }
+
+        // The cached rows carry their station names, so a cached list can still
+        // name its nodes when /nodes could not be reached either.
+        if (nodes == null || nodes.isEmpty()) {
+            nodes = BookingCache.nodeOptions(cached);
+        }
+
+        showBookings(BookingCache.toReservations(cached), when == null
+                ? getString(R.string.cache_offline)
+                : getString(R.string.cache_last_updated, when));
+    }
+
+    // Station names for the cache, so a cached row can name its node later
+    // without another read.
+    private Map<String, String> nodeNamesById() {
+        Map<String, String> names = new HashMap<>();
+
+        if (nodes == null) {
+            return names;
+        }
+
+        for (NodeOption node : nodes) {
+            names.put(node.id, node.stationName);
+        }
+
+        return names;
+    }
+
     // Groups by the API's status string. Upcoming groups run soonest first;
     // the history group runs most recent first.
-    private void showBookings(List<Reservation> all) {
+    private void showBookings(List<Reservation> all, String staleNote) {
         listBookings.removeAllViews();
         textEmpty.setVisibility(all.isEmpty() ? View.VISIBLE : View.GONE);
+
+        // Null for live data, a "last updated" line for cached data, so the two
+        // can never look the same on screen.
+        if (staleNote == null) {
+            textStale.setVisibility(View.GONE);
+        } else {
+            textStale.setText(staleNote);
+            textStale.setVisibility(View.VISIBLE);
+        }
 
         List<Reservation> pending = new ArrayList<>();
         List<Reservation> approved = new ArrayList<>();
@@ -211,11 +278,13 @@ public class MyBookingsActivity extends AppCompatActivity {
     private void showError(String message) {
         textError.setText(message);
         textError.setVisibility(TextUtils.isEmpty(message) ? View.GONE : View.VISIBLE);
+        textStale.setVisibility(View.GONE);
     }
 
-    // Clears the error and empty-list lines before a reload.
+    // Clears the error, empty-list and stale lines before a reload.
     private void hideMessages() {
         textError.setVisibility(View.GONE);
         textEmpty.setVisibility(View.GONE);
+        textStale.setVisibility(View.GONE);
     }
 }
