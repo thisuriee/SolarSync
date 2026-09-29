@@ -70,7 +70,7 @@ public class LoginActivity extends AppCompatActivity {
             showError(message);
         }
 
-        if (SessionManager.hasSession(this)) {
+        if (SessionManager.isLoggedIn(this)) {
             restoreSession();
         }
     }

@@ -2,10 +2,11 @@
  * File:    SessionManager.java
  * Author:  Dahami
  * Created: 2026-09-27
- * Purpose: Single place that writes and clears the SQLite session row and picks
- *          the home screen for a role. Screens of every vertical call
- *          handleAuthError() so a 401 always clears the session and returns to
- *          login the same way. Navigation only — the API enforces every rule.
+ * Purpose: Single place that writes and clears the SQLite session row, decides
+ *          whether a stored session is still usable, and picks the home screen
+ *          for a role. Screens of every vertical call handleAuthError() so a 401
+ *          always clears the session and returns to login the same way.
+ *          Navigation only — the API enforces every business rule.
  */
 package com.sliit.smartsolar.utils;
 
@@ -86,10 +87,34 @@ public final class SessionManager {
         openLogin(from, null);
     }
 
-    // True when a token is stored. Says nothing about whether it is still
-    // valid — only the API decides that, by answering 401.
-    public static boolean hasSession(Context context) {
-        return new SessionDao(context).hasToken();
+    // True when a stored session can still be used: a token is present and the
+    // expiry the API gave us has not passed. The API still has the final say —
+    // it answers 401 and handleAuthError clears the row — but checking here
+    // skips a round trip that is certain to fail.
+    //
+    // The expiry belongs to the token the server issued, so reading it locally
+    // is not the client deciding anything.
+    public static boolean isLoggedIn(Context context) {
+        ContentValues row = new SessionDao(context).get();
+
+        if (row == null) {
+            return false;
+        }
+
+        String token = row.getAsString(DbContract.Session.TOKEN);
+        if (token == null || token.trim().isEmpty()) {
+            return false;
+        }
+
+        return !hasExpired(row.getAsString(DbContract.Session.EXPIRES_AT));
+    }
+
+    // A missing or unreadable expiry counts as not yet expired. The API is the
+    // authority, and refusing a session the server would still accept would send
+    // a signed-in user back to the login form for no reason.
+    private static boolean hasExpired(String expiresAtIso) {
+        Date expiresAt = DateUtils.parseUtc(expiresAtIso);
+        return expiresAt != null && expiresAt.before(new Date());
     }
 
     // The home screen for a role, or null when the role has no mobile home.
