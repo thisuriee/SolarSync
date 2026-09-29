@@ -4,8 +4,10 @@
  * Created: 2026-09-25
  * Purpose: Mongo implementation of IReservationRepository. Pure data access —
  *          no business rules, no validation, no policy. QR methods by Imadh;
- *          reservation workflow methods (below the marker) by Thisuri.
+ *          reservation workflow methods (below the marker) by Thisuri;
+ *          dashboard counts and history search by Imadh (2026-09-29).
  */
+using System.Text.RegularExpressions;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using SmartSolar.Api.Models;
@@ -117,21 +119,15 @@ public class ReservationRepository : IReservationRepository
     // Every filter is part of the Mongo query, and the count uses the same
     // filter, so totalCount always describes exactly the set being paged.
     public async Task<(List<Reservation> Items, long TotalCount)> FindPaged(
-        string? status, string? stationId, string? nic, DateTime? from, DateTime? to, int skip, int limit)
+        string? status, string? stationId, string? nic, DateTime? from, DateTime? to, int skip, int limit,
+        string? search = null, IReadOnlyCollection<string>? stationIdsAnyOf = null)
     {
         if (stationId is not null && !ObjectId.TryParse(stationId, out _))
         {
             return (new List<Reservation>(), 0);
         }
 
-        var builder = Builders<Reservation>.Filter;
-        var filter = builder.Empty;
-
-        if (status is not null) filter &= builder.Eq(r => r.Status, status);
-        if (stationId is not null) filter &= builder.Eq(r => r.StationId, stationId);
-        if (nic is not null) filter &= builder.Eq(r => r.ProsumerNIC, nic);
-        if (from is not null) filter &= builder.Gte(r => r.SlotStart, from.Value);
-        if (to is not null) filter &= builder.Lte(r => r.SlotStart, to.Value);
+        var filter = BuildFilter(status, stationId, nic, from, to, search, stationIdsAnyOf);
 
         var total = await _reservations.CountDocumentsAsync(filter);
         var items = await _reservations.Find(filter)
@@ -141,6 +137,144 @@ public class ReservationRepository : IReservationRepository
             .ToListAsync();
 
         return (items, total);
+    }
+
+    // The one place a reservation read filter is assembled. The staff search
+    // route and M4's history route both come through here, so a filter can
+    // never come to mean two different things on two endpoints.
+    private static FilterDefinition<Reservation> BuildFilter(
+        string? status, string? stationId, string? nic, DateTime? from, DateTime? to,
+        string? search, IReadOnlyCollection<string>? stationIdsAnyOf)
+    {
+        var builder = Builders<Reservation>.Filter;
+        var filter = builder.Empty;
+
+        if (status is not null) filter &= builder.Eq(r => r.Status, status);
+        if (stationId is not null) filter &= builder.Eq(r => r.StationId, stationId);
+        if (nic is not null) filter &= builder.Eq(r => r.ProsumerNIC, nic);
+        if (from is not null) filter &= builder.Gte(r => r.SlotStart, from.Value);
+        if (to is not null) filter &= builder.Lte(r => r.SlotStart, to.Value);
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            // Escaped, so a term containing regex metacharacters is matched
+            // literally instead of becoming a pattern. Same convention as
+            // StationRepository.FindAll.
+            var term = search.Trim();
+            var pattern = new BsonRegularExpression(Regex.Escape(term), "i");
+
+            var alternatives = new List<FilterDefinition<Reservation>>
+            {
+                builder.Regex(r => r.ProsumerNIC, pattern)
+            };
+
+            // A reservation id is an ObjectId, so only a complete id can be
+            // matched by equality; a partial id is not a legal ObjectId and is
+            // simply not an id search.
+            if (ObjectId.TryParse(term, out _))
+            {
+                alternatives.Add(builder.Eq(r => r.Id, term));
+            }
+
+            // Station names live in SolarStationInfo, so the caller resolved
+            // them to ids. An empty set means no station matched and must
+            // contribute nothing — an empty $in would match nothing, which is
+            // correct here, but skipping it keeps the filter readable.
+            if (stationIdsAnyOf is { Count: > 0 })
+            {
+                alternatives.Add(builder.In(r => r.StationId, stationIdsAnyOf));
+            }
+
+            filter &= builder.Or(alternatives);
+        }
+
+        return filter;
+    }
+
+    // ---- Dashboards and history (Imadh) ----
+
+    // Same construction as CountInStatusesStartingAfter but with no time bound:
+    // the dashboard counts that ask about every booking, not only upcoming
+    // ones. An id that is not a valid ObjectId cannot match anything, so it
+    // counts zero instead of failing serialisation.
+    public async Task<long> CountInStatuses(
+        IReadOnlyCollection<string> statuses,
+        string? stationId = null, string? slotId = null, string? nic = null)
+    {
+        if ((stationId is not null && !ObjectId.TryParse(stationId, out _))
+            || (slotId is not null && !ObjectId.TryParse(slotId, out _)))
+        {
+            return 0;
+        }
+
+        var builder = Builders<Reservation>.Filter;
+        var filter = builder.In(r => r.Status, statuses);
+
+        if (stationId is not null) filter &= builder.Eq(r => r.StationId, stationId);
+        if (slotId is not null) filter &= builder.Eq(r => r.SlotId, slotId);
+        if (nic is not null) filter &= builder.Eq(r => r.ProsumerNIC, nic);
+
+        return await _reservations.CountDocumentsAsync(filter);
+    }
+
+    // Soonest slot first: the order an operator actually works the queue in.
+    // The count and the page use the same filter, so the dashboard's preview
+    // and its number can never describe two different sets.
+    public async Task<(List<Reservation> Items, long TotalCount)> FindPending(string? stationId, int limit)
+    {
+        if (stationId is not null && !ObjectId.TryParse(stationId, out _))
+        {
+            return (new List<Reservation>(), 0);
+        }
+
+        var builder = Builders<Reservation>.Filter;
+        var filter = builder.Eq(r => r.Status, ReservationStatuses.Pending);
+
+        if (stationId is not null) filter &= builder.Eq(r => r.StationId, stationId);
+
+        var total = await _reservations.CountDocumentsAsync(filter);
+        var items = await _reservations.Find(filter)
+            .SortBy(r => r.SlotStart)
+            .Limit(limit)
+            .ToListAsync();
+
+        return (items, total);
+    }
+
+    // Backs completedToday. Served by {status: 1, completedAt: -1} once the seed
+    // script creates it; without it this is a scan of the Completed set, which
+    // is small and shrinking relative to the collection.
+    public async Task<long> CountCompletedSince(DateTime since, string? stationId = null)
+    {
+        if (stationId is not null && !ObjectId.TryParse(stationId, out _))
+        {
+            return 0;
+        }
+
+        var builder = Builders<Reservation>.Filter;
+        var filter = builder.Eq(r => r.Status, ReservationStatuses.Completed)
+                     & builder.Gte(r => r.CompletedAt, since);
+
+        if (stationId is not null) filter &= builder.Eq(r => r.StationId, stationId);
+
+        return await _reservations.CountDocumentsAsync(filter);
+    }
+
+    // Backs nextBooking. Sorted ascending with a limit of one, so the database
+    // chooses the soonest rather than the caller sorting a list it fetched.
+    // Served by the existing {prosumerNIC: 1, slotStart: -1} index, read
+    // backwards.
+    public async Task<Reservation?> FindNextBookingByNic(string nic, DateTime utcNow)
+    {
+        var builder = Builders<Reservation>.Filter;
+        var filter = builder.Eq(r => r.ProsumerNIC, nic)
+                     & builder.Eq(r => r.Status, ReservationStatuses.Approved)
+                     & builder.Gt(r => r.SlotStart, utcNow);
+
+        return await _reservations.Find(filter)
+            .SortBy(r => r.SlotStart)
+            .Limit(1)
+            .FirstOrDefaultAsync();
     }
 
     // Pending -> Approved, recording who approved it and when.
