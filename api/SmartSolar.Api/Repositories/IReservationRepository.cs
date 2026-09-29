@@ -46,8 +46,39 @@ public interface IReservationRepository
 
     // One page of reservations, filtered in the query (never in memory).
     // from/to bound slotStart inclusively. Latest slot first.
+    //
+    // `search` matches a station name, a prosumer NIC or a full reservation id.
+    // Station names live in SolarStationInfo, so the caller resolves them first
+    // and passes the ids in stationIdsAnyOf; those ids are only consulted when
+    // `search` is set. Both default to null, so the staff search route calls
+    // this exactly as it did before the dashboards vertical landed.
     Task<(List<Reservation> Items, long TotalCount)> FindPaged(
-        string? status, string? stationId, string? nic, DateTime? from, DateTime? to, int skip, int limit);
+        string? status, string? stationId, string? nic, DateTime? from, DateTime? to, int skip, int limit,
+        string? search = null, IReadOnlyCollection<string>? stationIdsAnyOf = null);
+
+    // ---- Dashboards and history (Imadh) ----
+
+    // Counts reservations in one of the given statuses, narrowed by whichever
+    // of the three references is supplied — with NO time bound. The companion
+    // to CountInStatusesStartingAfter, for the dashboard counts that ask about
+    // every booking rather than only the upcoming ones.
+    Task<long> CountInStatuses(
+        IReadOnlyCollection<string> statuses,
+        string? stationId = null, string? slotId = null, string? nic = null);
+
+    // The pending approval queue, soonest slot first — the order an operator
+    // works through it. Returns the page of documents AND the database's total
+    // count, so the dashboard's preview and its number both come from Mongo
+    // and neither is counted in C#.
+    Task<(List<Reservation> Items, long TotalCount)> FindPending(string? stationId, int limit);
+
+    // Counts reservations completed at or after `since`, narrowed by station.
+    // Backs the operator dashboard's completedToday.
+    Task<long> CountCompletedSince(DateTime since, string? stationId = null);
+
+    // The soonest Approved reservation whose slot is still in the future, or
+    // null when there is none. Backs the prosumer dashboard's nextBooking.
+    Task<Reservation?> FindNextBookingByNic(string nic, DateTime utcNow);
 
     // Compare-and-set writes: each one only matches while the reservation is
     // still in expectedStatus, and returns the updated document, or null when

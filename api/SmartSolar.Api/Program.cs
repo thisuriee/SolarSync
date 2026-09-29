@@ -51,6 +51,11 @@ builder.Services.AddScoped<ISlotRepository>(sp =>
     new SlotRepository(sp.GetRequiredService<MongoContext>().Slots));
 builder.Services.AddScoped<IQrService, QrService>();
 
+// Dashboards and booking history (M4). Depends on IReservationQueries so the
+// dashboard counts and the M2/M3 guard rules share one definition of "active"
+// (docs/api-contract.md §6) rather than two that can drift.
+builder.Services.AddScoped<IDashboardService, DashboardService>();
+
 // Microgrid nodes and booking windows.
 builder.Services.AddScoped<INodeService, NodeService>();
 builder.Services.AddScoped<ISlotService, SlotService>();
