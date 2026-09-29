@@ -22,6 +22,7 @@ import android.content.Context;
 
 import com.sliit.smartsolar.models.Node;
 import com.sliit.smartsolar.network.DateUtils;
+import com.sliit.smartsolar.utils.StaleLabel;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -95,9 +96,11 @@ public class NodeCache {
     // When the cache was last refreshed, already formatted for display, or null
     // when it has never been filled. Screens show this beside cached data so a
     // stale list is visibly stale rather than passing as current.
+    //
+    // The formatting itself lives in StaleLabel, shared with the booking cache,
+    // so both caches describe a stale list the same way.
     public String lastRefreshedDisplay() {
-        String iso = syncMeta.getLastSyncedAt(ENTITY);
-        return iso == null ? null : DateUtils.toLocalDisplay(iso);
+        return StaleLabel.lastUpdated(syncMeta.getLastSyncedAt(ENTITY));
     }
 
     // SQLite has no strict typing, so each value is read defensively rather

@@ -117,8 +117,8 @@ public class NodeListActivity extends AppCompatActivity {
 
         String when = cache.lastRefreshedDisplay();
         render(cached, when == null
-                ? getString(R.string.nodes_offline)
-                : getString(R.string.nodes_last_updated, when));
+                ? getString(R.string.cache_offline)
+                : getString(R.string.cache_last_updated, when));
     }
 
     // Draws the rows. `staleNote` is null for live data and a "last updated"
