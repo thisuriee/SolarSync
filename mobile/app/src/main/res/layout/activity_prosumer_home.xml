@@ -44,6 +44,15 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
+            <!-- Dashboards (M4): live counts for this prosumer, and the way in
+                 to the full searchable booking history. -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonDashboard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:text="@string/dashboard_title" />
+
             <!-- Reservations (M3). -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/buttonBookSlot"

@@ -16,7 +16,7 @@ public final class DbContract {
     public static final String DB_NAME = "smartsolar.db";
 
     /** Bump when a table changes. onUpgrade drops and recreates. */
-    public static final int DB_VERSION = 1;
+    public static final int DB_VERSION = 2;
 
     private DbContract() {
     }
@@ -71,6 +71,35 @@ public final class DbContract {
         public static final String CACHED_AT = "cached_at";
 
         private CachedBookings() {
+        }
+    }
+
+    /**
+     * Single row holding the prosumer dashboard's figures as the API last
+     * returned them, owned by M4.
+     *
+     * Stored verbatim: the device never recomputes one of these numbers, so what
+     * is cached is an answer the server gave rather than the app's own
+     * arithmetic. The next booking's display fields sit alongside so its card can
+     * be redrawn offline without a second table.
+     */
+    public static final class CachedDashboard {
+        public static final String TABLE = "cached_dashboard";
+        public static final String ID = "id";
+        public static final String ACTIVE_COUNT = "active_count";
+        public static final String PENDING_COUNT = "pending_count";
+        public static final String APPROVED_FUTURE_COUNT = "approved_future_count";
+        public static final String NEXT_RESERVATION_ID = "next_reservation_id";
+        public static final String NEXT_STATION_ID = "next_station_id";
+        public static final String NEXT_SLOT_START = "next_slot_start";
+        public static final String NEXT_SLOT_END = "next_slot_end";
+        public static final String NEXT_STATUS = "next_status";
+        public static final String NEXT_ENERGY_KWH = "next_energy_kwh";
+
+        /** The dashboard table always holds exactly this one row id. */
+        public static final String SINGLE_ROW_ID = "1";
+
+        private CachedDashboard() {
         }
     }
 
