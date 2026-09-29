@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
   File:    activity_prosumer_home.xml
-  Author:  Dahami
-  Created: 2026-09-27
-  Purpose: Prosumer home. M3 (reservations) and M4 (bookings, QR) add their entry points to homeContent.
+  Author:  Common
+  Purpose: Prosumer home. reservations, bookings, QR add their entry points to homeContent.
 -->
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
@@ -77,6 +76,16 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
                 android:text="@string/action_node_list" />
+
+            <!-- Fulfilment: the prosumer's transaction QR for an approved
+                 booking, which the Grid Operator scans at the node. -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonMyQr"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:text="@string/action_show_qr" />
 
         </LinearLayout>
 

@@ -53,6 +53,16 @@
                 android:layout_marginBottom="16dp"
                 android:text="@string/action_node_list" />
 
+            <!-- Fulfilment (M4): scan the prosumer's transaction QR, verify it
+                 with the server, and finalise the energy transfer. -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonScanQr"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:text="@string/action_scan_qr" />
+
         </LinearLayout>
 
         <com.google.android.material.button.MaterialButton

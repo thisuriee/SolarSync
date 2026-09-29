@@ -62,9 +62,15 @@ dependencies {
     implementation(libs.activity)
     implementation(libs.constraintlayout)
 
-    // QR encoding only. Scanning (operator mode) needs a camera-backed library,
-    // which is a separate decision.
+    // QR encoding (prosumer display) and decoding (operator scan). zxing core is
+    // pure Java, so the decode step is unit-testable without a device.
     implementation(libs.zxing.core)
+
+    // Camera preview and frame analysis for the operator's scanner.
+    implementation(libs.camera.core)
+    implementation(libs.camera.camera2)
+    implementation(libs.camera.lifecycle)
+    implementation(libs.camera.view)
     // Google Maps and the fused location provider, for the nearby-nodes map.
     implementation(libs.play.services.maps)
     implementation(libs.play.services.location)
