@@ -20,6 +20,7 @@ import PendingActivationsPage from './pages/users/PendingActivationsPage'
 import ProsumersPage from './pages/users/ProsumersPage'
 import WebUsersPage from './pages/users/WebUsersPage'
 import NodesPage from './pages/nodes/NodesPage'
+import ReservationsPage from './pages/reservations/ReservationsPage'
 import NotFoundPage from './pages/NotFoundPage'
 import { ROLES } from './utils/roles'
 
@@ -65,11 +66,8 @@ export default function App() {
               <Route path="/prosumers" element={<ProsumersPage />} />
               {/* Microgrid nodes and their booking windows */}
               <Route path="/nodes" element={<NodesPage />} />
-              {/* M3 — proposed path */}
-              <Route
-                path="/reservations"
-                element={<ComingSoon title="Reservations" owner="M3" />}
-              />
+              {/* M3 — reservation management */}
+              <Route path="/reservations" element={<ReservationsPage />} />
               {/* M4 — proposed paths */}
               <Route path="/dashboard" element={<ComingSoon title="Dashboard" owner="M4" />} />
               <Route path="/history" element={<ComingSoon title="Booking History" owner="M4" />} />
