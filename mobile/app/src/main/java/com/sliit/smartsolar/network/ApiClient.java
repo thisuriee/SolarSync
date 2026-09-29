@@ -55,8 +55,10 @@ public final class ApiClient {
     }
 
     /**
-     * Must be called once before any request, typically from
-     * MainActivity.onCreate. Holds an application context, so it cannot leak.
+     * Called once per process from SmartSolarApplication.onCreate, before any
+     * Activity runs — Android can restore straight into a home screen after the
+     * process was killed, skipping the launcher entirely. Holds an application
+     * context, so it cannot leak.
      */
     public static void init(Context context) {
         sessionDao = new SessionDao(context.getApplicationContext());

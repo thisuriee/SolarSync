@@ -36,6 +36,8 @@ public class ProsumerHomeActivity extends AppCompatActivity {
                 startActivity(new Intent(this, NearbyNodesMapActivity.class)));
         findViewById(R.id.buttonNodeList).setOnClickListener(v ->
                 startActivity(new Intent(this, NodeListActivity.class)));
+        findViewById(R.id.buttonMyQr).setOnClickListener(v ->
+                startActivity(new Intent(this, QrDisplayActivity.class)));
         findViewById(R.id.buttonLogout).setOnClickListener(v -> SessionManager.logout(this));
     }
 
