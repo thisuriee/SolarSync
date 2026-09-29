@@ -40,4 +40,9 @@ public static class ReservationStatuses
     // The two statuses that make a reservation "active" for the purpose of the
     // shared predicate in docs/api-contract.md §6. Paired with slotStart > now.
     public static readonly string[] Active = [Pending, Approved];
+
+    // The complete set, for validating a ?status= query parameter. Mirrors the
+    // All array on StationStatuses and SlotStatuses above, so every status
+    // group in the schema is enumerable the same way.
+    public static readonly string[] All = [Pending, Approved, Rejected, Cancelled, Completed];
 }

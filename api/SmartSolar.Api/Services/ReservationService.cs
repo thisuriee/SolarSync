@@ -17,6 +17,11 @@
  *          R1 (7-day window) and R2 (12-hour notice) each live in exactly one
  *          private method, and their numbers in exactly one constant.
  *
+ *          The query-string normalisation (?status=, from/to, page/pageSize)
+ *          and the two caller guards moved to Helpers/QueryNormalisation and
+ *          Helpers/CallerGuard on 2026-09-29, when M4's booking-history
+ *          endpoint needed the identical behaviour. One definition each.
+ *
  *          Throws BusinessRuleException; ExceptionHandlingMiddleware formats
  *          it. Nothing here returns an HTTP result, and every time comparison
  *          uses DateTime.UtcNow (slot times are stored in UTC; Sri Lanka is
@@ -38,9 +43,6 @@ public class ReservationService : IReservationService, IReservationQueries
     // R2: updates and cancellations must be at least this long before slotStart.
     public static readonly TimeSpan NoticePeriod = TimeSpan.FromHours(12);
 
-    private const int DefaultPageSize = 20;
-    private const int MaxPageSize = 100;
-
     // The transition table from docs/api-contract.md §4. A status that is not
     // a key (Rejected, Cancelled, Completed) is terminal.
     private static readonly Dictionary<string, string[]> LegalTransitions = new()
@@ -48,12 +50,6 @@ public class ReservationService : IReservationService, IReservationQueries
         [ReservationStatuses.Pending] = [ReservationStatuses.Approved, ReservationStatuses.Rejected, ReservationStatuses.Cancelled],
         [ReservationStatuses.Approved] = [ReservationStatuses.Cancelled, ReservationStatuses.Completed]
     };
-
-    private static readonly string[] AllStatuses =
-    [
-        ReservationStatuses.Pending, ReservationStatuses.Approved, ReservationStatuses.Rejected,
-        ReservationStatuses.Cancelled, ReservationStatuses.Completed
-    ];
 
     private readonly IReservationRepository _reservations;
     private readonly ISlotCapacityRepository _slots;
@@ -141,7 +137,7 @@ public class ReservationService : IReservationService, IReservationQueries
     // step that writes, and it is compensated if the insert fails.
     public async Task<ReservationResponse> Create(CreateReservationRequest request, CallerIdentity caller)
     {
-        EnsureRole(caller, "Only prosumers and Backoffice staff can create reservations.",
+        CallerGuard.RequireRole(caller, "Only prosumers and Backoffice staff can create reservations.",
             UserRoles.Prosumer, UserRoles.Backoffice);
 
         var nic = ResolveBookingNic(request.ProsumerNIC, caller);
@@ -204,9 +200,10 @@ public class ReservationService : IReservationService, IReservationQueries
     // Rule: /mine has no nic parameter — the NIC is the token's, full stop.
     public async Task<List<ReservationResponse>> FindMine(string? status, CallerIdentity caller)
     {
-        EnsureRole(caller, "Only prosumers have their own reservations.", UserRoles.Prosumer);
+        CallerGuard.RequireRole(caller, "Only prosumers have their own reservations.", UserRoles.Prosumer);
 
-        var reservations = await _reservations.FindByNic(RequireCallerNic(caller), NormaliseStatusFilter(status));
+        var reservations = await _reservations.FindByNic(
+            CallerGuard.RequireNic(caller), QueryNormalisation.Status(status));
 
         return reservations.Select(ReservationResponse.FromReservation).ToList();
     }
@@ -217,18 +214,17 @@ public class ReservationService : IReservationService, IReservationQueries
         string? status, string? nodeId, string? nic, DateTime? from, DateTime? to,
         int? page, int? pageSize, CallerIdentity caller)
     {
-        EnsureRole(caller, "Only Backoffice and Grid Operator staff can search reservations.",
+        CallerGuard.RequireRole(caller, "Only Backoffice and Grid Operator staff can search reservations.",
             UserRoles.Backoffice, UserRoles.GridOperator);
 
-        var effectivePage = Math.Max(page ?? 1, 1);
-        var effectiveSize = Math.Clamp(pageSize ?? DefaultPageSize, 1, MaxPageSize);
+        QueryNormalisation.Page(page, pageSize, out var effectivePage, out var effectiveSize);
 
         var (items, total) = await _reservations.FindPaged(
-            NormaliseStatusFilter(status),
+            QueryNormalisation.Status(status),
             string.IsNullOrWhiteSpace(nodeId) ? null : nodeId.Trim(),
             string.IsNullOrWhiteSpace(nic) ? null : IdentityFormat.NormaliseNic(nic),
-            AsUtc(from),
-            AsUtc(to),
+            QueryNormalisation.AsUtc(from),
+            QueryNormalisation.AsUtc(to),
             (effectivePage - 1) * effectiveSize,
             effectiveSize);
 
@@ -246,7 +242,7 @@ public class ReservationService : IReservationService, IReservationQueries
     // as it was instead of stranding the prosumer with nothing.
     public async Task<ReservationResponse> Update(string id, UpdateReservationRequest request, CallerIdentity caller)
     {
-        EnsureRole(caller, "Only prosumers and Backoffice staff can update reservations.",
+        CallerGuard.RequireRole(caller, "Only prosumers and Backoffice staff can update reservations.",
             UserRoles.Prosumer, UserRoles.Backoffice);
 
         var reservation = await LoadReservation(id);
@@ -339,7 +335,7 @@ public class ReservationService : IReservationService, IReservationQueries
     // is issued lazily by M4's GET /reservations/{id}/qr.
     public async Task<ReservationResponse> Approve(string id, CallerIdentity caller)
     {
-        EnsureRole(caller, "Only Grid Operators can approve reservations.", UserRoles.GridOperator);
+        CallerGuard.RequireRole(caller, "Only Grid Operators can approve reservations.", UserRoles.GridOperator);
 
         var reservation = await LoadReservation(id);
         EnsureTransition(reservation.Status, ReservationStatuses.Approved);
@@ -354,7 +350,7 @@ public class ReservationService : IReservationService, IReservationQueries
     // the space goes back to the slot (only if our compare-and-set won).
     public async Task<ReservationResponse> Reject(string id, string reason, CallerIdentity caller)
     {
-        EnsureRole(caller, "Only Grid Operators can reject reservations.", UserRoles.GridOperator);
+        CallerGuard.RequireRole(caller, "Only Grid Operators can reject reservations.", UserRoles.GridOperator);
 
         var reservation = await LoadReservation(id);
         EnsureTransition(reservation.Status, ReservationStatuses.Rejected);
@@ -410,7 +406,7 @@ public class ReservationService : IReservationService, IReservationQueries
     {
         if (caller.Role == UserRoles.Prosumer)
         {
-            return RequireCallerNic(caller);
+            return CallerGuard.RequireNic(caller);
         }
 
         if (string.IsNullOrWhiteSpace(bodyNic))
@@ -497,7 +493,7 @@ public class ReservationService : IReservationService, IReservationQueries
     {
         if (caller.Role == UserRoles.Prosumer)
         {
-            if (RequireCallerNic(caller) != reservation.ProsumerNIC)
+            if (CallerGuard.RequireNic(caller) != reservation.ProsumerNIC)
             {
                 throw UserErrors.ForbiddenRole("You can only access your own reservations.");
             }
@@ -509,32 +505,6 @@ public class ReservationService : IReservationService, IReservationQueries
         {
             throw UserErrors.ForbiddenRole("Your role is not permitted to perform this action on a reservation.");
         }
-    }
-
-    // Service-layer role re-check, so the rule holds even if an [Authorize]
-    // attribute is ever dropped from the controller.
-    private static void EnsureRole(CallerIdentity caller, string detail, params string[] roles)
-    {
-        if (!roles.Contains(caller.Role))
-        {
-            throw UserErrors.ForbiddenRole(detail);
-        }
-    }
-
-    // A prosumer token always carries a nic claim; if it does not, the
-    // session is broken and the client must log in again.
-    private static string RequireCallerNic(CallerIdentity caller)
-    {
-        if (string.IsNullOrWhiteSpace(caller.Nic))
-        {
-            throw new BusinessRuleException(
-                "AUTH_INVALID_TOKEN",
-                "Invalid session",
-                "Your session is invalid. Please log in again.",
-                StatusCodes.Status401Unauthorized);
-        }
-
-        return caller.Nic;
     }
 
     // Loads a reservation or throws 404. A malformed id is a 404 too, rather
@@ -555,30 +525,4 @@ public class ReservationService : IReservationService, IReservationQueries
         return await _slots.FindById(slotId) ?? throw ReservationErrors.SlotNotFound();
     }
 
-    // Blank -> no filter; otherwise must be one of the five statuses (any
-    // casing), returned in its stored casing. Unknown -> 400.
-    private static string? NormaliseStatusFilter(string? status)
-    {
-        if (string.IsNullOrWhiteSpace(status))
-        {
-            return null;
-        }
-
-        return AllStatuses.FirstOrDefault(s => string.Equals(s, status.Trim(), StringComparison.OrdinalIgnoreCase))
-            ?? throw ReservationErrors.InvalidStatusFilter(status);
-    }
-
-    // The contract sends UTC ("...Z"). A value with no offset is taken to be
-    // UTC as well, rather than being shifted as if it were server-local.
-    private static DateTime? AsUtc(DateTime? value)
-    {
-        if (value is null) return null;
-
-        return value.Value.Kind switch
-        {
-            DateTimeKind.Utc => value.Value,
-            DateTimeKind.Local => value.Value.ToUniversalTime(),
-            _ => DateTime.SpecifyKind(value.Value, DateTimeKind.Utc)
-        };
-    }
 }
