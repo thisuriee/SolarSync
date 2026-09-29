@@ -62,6 +62,9 @@ dependencies {
     implementation(libs.activity)
     implementation(libs.constraintlayout)
 
+    // QR encoding only. Scanning (operator mode) needs a camera-backed library,
+    // which is a separate decision.
+    implementation(libs.zxing.core)
     // Google Maps and the fused location provider, for the nearby-nodes map.
     implementation(libs.play.services.maps)
     implementation(libs.play.services.location)

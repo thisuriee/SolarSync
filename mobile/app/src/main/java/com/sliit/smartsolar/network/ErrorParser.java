@@ -15,6 +15,9 @@ public final class ErrorParser {
     /** Code used when the request never reached the API. Not a server code. */
     public static final String CODE_NO_RESPONSE = "NO_RESPONSE";
 
+    /** Code used when the API answered but sent no problem object. Not a server code. */
+    public static final String CODE_NO_PROBLEM_BODY = "NO_PROBLEM_BODY";
+
     // Transport-only wording. Business rule failures always use the API's detail
     // so the message on screen is never authored by the client.
     private static final String NO_RESPONSE_DETAIL =
@@ -41,27 +44,44 @@ public final class ErrorParser {
         }
     }
 
-    // Parses an error body. A null, empty or non-JSON body means the API was
-    // never reached, which is a transport failure rather than a rule violation.
-    public static ErrorInfo parse(String body) {
-        if (body == null || body.trim().isEmpty()) {
-            return new ErrorInfo(CODE_NO_RESPONSE, NO_RESPONSE_DETAIL, 0, "No response");
+    // Parses an error body together with the status that came with it.
+    //
+    // Three cases that must not be conflated:
+    //   - a problem object       -> the API's own code and detail
+    //   - a status but no body   -> the server WAS reached: a routing 404 or an
+    //                               empty response. Reporting "could not reach
+    //                               the server" here sends debugging the wrong way
+    //   - no status at all       -> the request never completed
+    public static ErrorInfo parse(String body, int statusCode) {
+        if (body != null && !body.trim().isEmpty()) {
+            try {
+                JSONObject json = new JSONObject(body);
+                String code = json.optString("code", "");
+                String detail = json.optString("detail", "");
+
+                if (!code.isEmpty() || !detail.isEmpty()) {
+                    return new ErrorInfo(
+                            code.isEmpty() ? CODE_NO_PROBLEM_BODY : code,
+                            detail.isEmpty() ? detailFor(statusCode) : detail,
+                            json.optInt("status", statusCode),
+                            json.optString("title", ""));
+                }
+            } catch (Exception notJson) {
+                // Fall through: a proxy page or transport artefact, not a
+                // problem object.
+            }
         }
 
-        try {
-            JSONObject json = new JSONObject(body);
-            String code = json.optString("code", CODE_NO_RESPONSE);
-            String detail = json.optString("detail", NO_RESPONSE_DETAIL);
-
-            return new ErrorInfo(
-                    code.isEmpty() ? CODE_NO_RESPONSE : code,
-                    detail.isEmpty() ? NO_RESPONSE_DETAIL : detail,
-                    json.optInt("status", 0),
-                    json.optString("title", ""));
-        } catch (Exception notJson) {
-            // A non-JSON error body is a proxy or transport artefact, not a
-            // problem object, so fall back to the transport wording.
-            return new ErrorInfo(CODE_NO_RESPONSE, NO_RESPONSE_DETAIL, 0, "No response");
+        if (statusCode > 0) {
+            return new ErrorInfo(CODE_NO_PROBLEM_BODY, detailFor(statusCode), statusCode, "");
         }
+
+        return new ErrorInfo(CODE_NO_RESPONSE, NO_RESPONSE_DETAIL, 0, "No response");
+    }
+
+    // Wording for a response carrying no problem object. This is not a business
+    // rule message: no rule failed, the API simply sent no detail.
+    private static String detailFor(int statusCode) {
+        return "The server returned HTTP " + statusCode + " without an error detail.";
     }
 }
