@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    VerificationResultActivity — what the API said about the scanned token, and
+    the one action left: finalising the transfer. Every row below is filled from
+    the server's response; the screen computes nothing.
+-->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/verify_title"
+            android:textAppearance="?attr/textAppearanceHeadlineSmall" />
+
+        <TextView
+            android:id="@+id/textStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/verify_preparing"
+            android:textAppearance="?attr/textAppearanceBodyLarge" />
+
+        <!-- item_detail_row.xml rows are added here once the API answers. -->
+        <LinearLayout
+            android:id="@+id/detailContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:orientation="vertical" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonFinalise"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="@string/verify_finalise"
+            android:visibility="gone" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonRescan"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="@string/scan_again"
+            android:visibility="gone" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonHome"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="@string/verify_back_home"
+            android:visibility="gone" />
+    </LinearLayout>
+</ScrollView>

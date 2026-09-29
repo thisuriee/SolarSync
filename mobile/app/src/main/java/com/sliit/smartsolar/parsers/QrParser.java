@@ -13,6 +13,8 @@ import android.content.ContentValues;
 
 import com.sliit.smartsolar.database.DbContract;
 import com.sliit.smartsolar.models.ApprovedBooking;
+import com.sliit.smartsolar.models.Reservation;
+import com.sliit.smartsolar.models.VerifiedTransfer;
 import com.sliit.smartsolar.network.DateUtils;
 
 import org.json.JSONArray;
@@ -132,5 +134,43 @@ public final class QrParser {
         }
 
         return bookings;
+    }
+
+    // Parses the body of POST /fulfilment/verify-qr:
+    //   { reservation: {...}, prosumer: {...}|null, station: {...}|null, verificationId }
+    // The nested reservation is handed to M3's ReservationParser rather than
+    // re-reading the same fields here, so a contract change touches one file.
+    // Returns null when the body carries no reservation or no verificationId,
+    // which the caller treats as a failure rather than a confirmed transfer.
+    public static VerifiedTransfer parseVerification(String json) {
+        if (json == null || json.trim().isEmpty()) {
+            return null;
+        }
+
+        try {
+            JSONObject object = new JSONObject(json);
+
+            JSONObject reservationJson = object.optJSONObject("reservation");
+            String verificationId = object.optString("verificationId", "");
+            if (reservationJson == null || verificationId.isEmpty()) {
+                return null;
+            }
+
+            Reservation reservation = ReservationParser.parseReservation(reservationJson.toString());
+
+            JSONObject prosumer = object.optJSONObject("prosumer");
+            JSONObject station = object.optJSONObject("station");
+
+            return new VerifiedTransfer(
+                    reservation,
+                    prosumer == null ? null : prosumer.optString("nic", ""),
+                    prosumer == null ? null : prosumer.optString("fullName", ""),
+                    prosumer == null ? null : prosumer.optString("phone", ""),
+                    station == null ? null : station.optString("stationName", ""),
+                    station == null ? null : station.optString("city", ""),
+                    verificationId);
+        } catch (Exception malformed) {
+            return null;
+        }
     }
 }
