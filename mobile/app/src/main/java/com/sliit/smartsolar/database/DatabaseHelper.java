@@ -33,7 +33,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         super(context, DbContract.DB_NAME, null, DbContract.DB_VERSION);
     }
 
-    // Creates the four tables. The session table holds the token only — never a
+    // Creates the five tables. The session table holds the token only — never a
     // password, plaintext or hashed.
     @Override
     public void onCreate(SQLiteDatabase db) {
@@ -69,6 +69,18 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 + DbContract.CachedBookings.STATUS + " TEXT, "
                 + DbContract.CachedBookings.CACHED_AT + " TEXT)");
 
+        db.execSQL("CREATE TABLE " + DbContract.CachedDashboard.TABLE + " ("
+                + DbContract.CachedDashboard.ID + " INTEGER PRIMARY KEY, "
+                + DbContract.CachedDashboard.ACTIVE_COUNT + " INTEGER, "
+                + DbContract.CachedDashboard.PENDING_COUNT + " INTEGER, "
+                + DbContract.CachedDashboard.APPROVED_FUTURE_COUNT + " INTEGER, "
+                + DbContract.CachedDashboard.NEXT_RESERVATION_ID + " TEXT, "
+                + DbContract.CachedDashboard.NEXT_STATION_ID + " TEXT, "
+                + DbContract.CachedDashboard.NEXT_SLOT_START + " TEXT, "
+                + DbContract.CachedDashboard.NEXT_SLOT_END + " TEXT, "
+                + DbContract.CachedDashboard.NEXT_STATUS + " TEXT, "
+                + DbContract.CachedDashboard.NEXT_ENERGY_KWH + " REAL)");
+
         db.execSQL("CREATE TABLE " + DbContract.SyncMeta.TABLE + " ("
                 + DbContract.SyncMeta.ENTITY + " TEXT PRIMARY KEY, "
                 + DbContract.SyncMeta.LAST_SYNCED_AT + " TEXT)");
@@ -82,6 +94,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.execSQL("DROP TABLE IF EXISTS " + DbContract.Session.TABLE);
         db.execSQL("DROP TABLE IF EXISTS " + DbContract.CachedNodes.TABLE);
         db.execSQL("DROP TABLE IF EXISTS " + DbContract.CachedBookings.TABLE);
+        db.execSQL("DROP TABLE IF EXISTS " + DbContract.CachedDashboard.TABLE);
         db.execSQL("DROP TABLE IF EXISTS " + DbContract.SyncMeta.TABLE);
         onCreate(db);
     }
@@ -93,6 +106,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.delete(DbContract.Session.TABLE, null, null);
         db.delete(DbContract.CachedNodes.TABLE, null, null);
         db.delete(DbContract.CachedBookings.TABLE, null, null);
+        db.delete(DbContract.CachedDashboard.TABLE, null, null);
         db.delete(DbContract.SyncMeta.TABLE, null, null);
     }
 
