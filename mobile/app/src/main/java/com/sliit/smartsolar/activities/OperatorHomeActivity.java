@@ -37,6 +37,8 @@ public class OperatorHomeActivity extends AppCompatActivity {
                 startActivity(new Intent(this, NearbyNodesMapActivity.class)));
         findViewById(R.id.buttonNodeList).setOnClickListener(v ->
                 startActivity(new Intent(this, NodeListActivity.class)));
+        findViewById(R.id.buttonScanQr).setOnClickListener(v ->
+                startActivity(new Intent(this, QrScannerActivity.class)));
         findViewById(R.id.buttonLogout).setOnClickListener(v -> SessionManager.logout(this));
     }
 }

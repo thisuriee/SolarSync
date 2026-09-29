@@ -4,6 +4,14 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
 
+    <!-- Operator mode scans the prosumer's transaction QR. The feature is
+         declared optional so the app still installs on a camera-less device,
+         where the scanner explains itself instead of crashing. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+
     <!-- The nearby-nodes map asks where the phone is so the API can measure
          from there. Coarse is enough: the search radius is kilometres wide. -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
@@ -86,7 +94,19 @@
             android:name=".activities.QrDisplayActivity"
             android:exported="false"
             android:label="@string/qr_bookings_title"
-            android:parentActivityName=".MainActivity" />
+            android:parentActivityName=".activities.ProsumerHomeActivity" />
+
+        <!-- Fulfilment (M4): the operator's half of the handoff. The scanner
+             decodes the token, then the result screen verifies it and finalises
+             the transfer. Not exported: reachable only from the operator home. -->
+        <activity
+            android:name=".activities.QrScannerActivity"
+            android:exported="false"
+            android:label="@string/scan_title" />
+        <activity
+            android:name=".activities.VerificationResultActivity"
+            android:exported="false"
+            android:label="@string/verify_title" />
 
         <!-- Maps key read from local.properties. An unregistered SHA-1 produces
              a grey map with no error dialog, so every member's debug fingerprint

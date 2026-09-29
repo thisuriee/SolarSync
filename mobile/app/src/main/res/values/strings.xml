@@ -176,4 +176,27 @@
         <item quantity="one">1 node within %2$d km</item>
         <item quantity="other">%1$d nodes within %2$d km</item>
     </plurals>
+
+    <!-- Fulfilment, operator mode. Hints and labels only: every rule-failure
+         message shown to the operator is the API's own detail. -->
+    <string name="action_scan_qr">Scan prosumer QR</string>
+    <string name="action_show_qr">My QR code</string>
+    <string name="scan_title">Scan QR code</string>
+    <string name="scan_hint">Point the camera at the prosumer\'s QR code.</string>
+    <string name="scan_permission_denied">Camera access is needed to scan a QR code. Grant it in Settings to continue.</string>
+    <string name="scan_open_settings">Open settings</string>
+    <string name="scan_again">Scan again</string>
+    <string name="verify_title">Verify transfer</string>
+    <string name="verify_preparing">Checking the code with the server…</string>
+    <string name="verify_finalise">Finalise transfer</string>
+    <string name="verify_completed">Transfer completed.</string>
+    <string name="verify_back_home">Back to home</string>
+    <string name="verify_prosumer">Prosumer</string>
+    <string name="verify_nic">NIC</string>
+    <string name="verify_phone">Phone</string>
+    <string name="verify_station">Station</string>
+    <string name="verify_city">City</string>
+    <string name="verify_slot">Slot</string>
+    <string name="verify_energy">Energy</string>
+    <string name="verify_status">Status</string>
 </resources>
