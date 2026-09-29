@@ -26,6 +26,8 @@ public class ProsumerHomeActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_prosumer_home);
 
+        findViewById(R.id.buttonDashboard).setOnClickListener(v ->
+                startActivity(new Intent(this, ProsumerDashboardActivity.class)));
         findViewById(R.id.buttonMyProfile).setOnClickListener(v ->
                 startActivity(new Intent(this, MyProfileActivity.class)));
         findViewById(R.id.buttonBookSlot).setOnClickListener(v ->

@@ -108,6 +108,20 @@
             android:exported="false"
             android:label="@string/verify_title" />
 
+        <!-- Dashboards and booking history (M4). Read-only views over the
+             reservations the server already holds. Not exported: reachable only
+             from the prosumer home. -->
+        <activity
+            android:name=".activities.ProsumerDashboardActivity"
+            android:exported="false"
+            android:label="@string/dashboard_title"
+            android:parentActivityName=".activities.ProsumerHomeActivity" />
+        <activity
+            android:name=".activities.BookingHistoryActivity"
+            android:exported="false"
+            android:label="@string/history_title"
+            android:parentActivityName=".activities.ProsumerHomeActivity" />
+
         <!-- Maps key read from local.properties. An unregistered SHA-1 produces
              a grey map with no error dialog, so every member's debug fingerprint
              must be registered against this key. -->

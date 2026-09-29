@@ -201,4 +201,33 @@
     <string name="verify_slot">Slot</string>
     <string name="verify_energy">Energy</string>
     <string name="verify_status">Status</string>
+
+    <!-- Dashboards and booking history (M4). Labels and captions only: every
+         figure arrives from the API already computed, and every failure shows
+         the API's own detail rather than a message written here. -->
+
+    <string name="action_history">Booking history</string>
+    <string name="action_apply">Apply</string>
+    <string name="action_clear">Clear</string>
+
+    <string name="dashboard_title">Dashboard</string>
+    <string name="dashboard_active">Active</string>
+    <string name="dashboard_pending">Pending</string>
+    <string name="dashboard_approved_future">Approved, upcoming</string>
+    <string name="dashboard_next_title">Next booking</string>
+    <string name="dashboard_next_none">No upcoming booked slot.</string>
+
+    <string name="history_title">Booking history</string>
+    <string name="history_status_hint">Status</string>
+    <string name="history_status_any">Any status</string>
+    <string name="history_search_hint">Search station, NIC or booking id</string>
+    <string name="history_from">From</string>
+    <string name="history_to">To</string>
+    <string name="history_range">%1$s → %2$s</string>
+    <string name="history_range_from">From %1$s</string>
+    <string name="history_range_to">Until %1$s</string>
+    <string name="history_page">Page %1$d of %2$d</string>
+    <string name="history_prev">Previous</string>
+    <string name="history_next">Next</string>
+    <string name="history_empty_filtered">No bookings match these filters.</string>
 </resources>

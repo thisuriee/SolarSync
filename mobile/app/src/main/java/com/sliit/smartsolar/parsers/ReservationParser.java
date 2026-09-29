@@ -11,6 +11,7 @@ package com.sliit.smartsolar.parsers;
 
 import com.sliit.smartsolar.models.AvailableSlot;
 import com.sliit.smartsolar.models.NodeOption;
+import com.sliit.smartsolar.models.PagedReservations;
 import com.sliit.smartsolar.models.Reservation;
 
 import org.json.JSONArray;
@@ -40,6 +41,27 @@ public final class ReservationParser {
             list.add(parseReservation(array.getJSONObject(i)));
         }
         return list;
+    }
+
+    // Parses the paged envelope returned by GET /reservations/history
+    // (docs/response-format.md: {items, page, pageSize, totalCount, totalPages}).
+    // The page numbers arrive with the items, so the screen is told where it is
+    // rather than working it out.
+    public static PagedReservations parseHistoryPage(String body) throws JSONException {
+        JSONObject json = new JSONObject(body);
+        JSONArray array = json.getJSONArray("items");
+        List<Reservation> list = new ArrayList<>(array.length());
+
+        for (int i = 0; i < array.length(); i++) {
+            list.add(parseReservation(array.getJSONObject(i)));
+        }
+
+        return new PagedReservations(
+                list,
+                json.optInt("page", 1),
+                json.optInt("pageSize", list.size()),
+                json.optLong("totalCount", list.size()),
+                json.optInt("totalPages", 0));
     }
 
     // Parses the array returned by GET /slots/available. Each slot keeps its
@@ -77,7 +99,11 @@ public final class ReservationParser {
 
     // Maps one ReservationResponse object. Audit fields the API leaves null
     // (not yet approved, never cancelled, ...) stay null, never "null".
-    private static Reservation parseReservation(JSONObject json) throws JSONException {
+    //
+    // Public because the dashboard's nextBooking is the same object nested in a
+    // different body: re-reading these field names elsewhere would let the two
+    // copies drift.
+    public static Reservation parseReservation(JSONObject json) throws JSONException {
         return new Reservation(
                 json.getString("id"),
                 json.getString("prosumerNIC"),
