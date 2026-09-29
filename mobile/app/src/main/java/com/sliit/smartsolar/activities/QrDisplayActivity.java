@@ -8,6 +8,11 @@
  *          The screen holds no rules. It asks the API for the token, renders
  *          whatever the API returned, and displays the API's own error message
  *          when it refuses. Nothing here decides whether a booking is valid.
+ *
+ *          The QR token is never cached — it is fetched per booking, live, and
+ *          a stored one could be shown after the server had already invalidated
+ *          it. This screen only READS the booking cache, and only to keep a
+ *          usable list on screen when the API is unreachable.
  */
 package com.sliit.smartsolar.activities;
 
@@ -31,7 +36,7 @@ import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
 import com.sliit.smartsolar.R;
-import com.sliit.smartsolar.database.BookingDao;
+import com.sliit.smartsolar.database.BookingCache;
 import com.sliit.smartsolar.database.DbContract;
 import com.sliit.smartsolar.database.NodeDao;
 import com.sliit.smartsolar.models.ApprovedBooking;
@@ -60,7 +65,7 @@ public class QrDisplayActivity extends AppCompatActivity {
     private final List<ApprovedBooking> bookings = new ArrayList<>();
 
     private ArrayAdapter<String> adapter;
-    private BookingDao bookingDao;
+    private BookingCache bookingCache;
     private NodeDao nodeDao;
 
     private View listPanel;
@@ -75,7 +80,7 @@ public class QrDisplayActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_qr_display);
 
-        bookingDao = new BookingDao(this);
+        bookingCache = new BookingCache(this);
         nodeDao = new NodeDao(this);
 
         listPanel = findViewById(R.id.listPanel);
@@ -95,9 +100,11 @@ public class QrDisplayActivity extends AppCompatActivity {
         loadBookings();
     }
 
-    // Asks the API for the approved bookings and overwrites the cache on success.
-    // The cache renders only when the call fails, and is labelled with the API's
-    // message rather than a locally invented one.
+    // Asks the API for the approved bookings. This screen READS the booking
+    // cache but never writes it: it asks /reservations/mine?status=Approved, a
+    // filtered read, and letting that overwrite cached_bookings would leave the
+    // My bookings screen holding only the approved subset with no way to tell.
+    // The full snapshot is written by the screen that reads the unfiltered route.
     private void loadBookings() {
         listStatus.setText(R.string.qr_loading);
 
@@ -105,17 +112,27 @@ public class QrDisplayActivity extends AppCompatActivity {
 
             @Override
             public void onSuccess(String body) {
-                List<ApprovedBooking> fetched = QrParser.parseBookings(body);
-                bookingDao.replaceAll(QrParser.toCacheRows(fetched));
-                showBookings(fetched, null);
+                showBookings(QrParser.parseBookings(body), null);
             }
 
             @Override
             public void onError(String code, String detail) {
-                List<ContentValues> cached = bookingDao.findByStatus(APPROVED);
-                showBookings(QrParser.fromCacheRows(cached), detail);
+                List<ContentValues> cached = bookingCache.loadByStatus(APPROVED);
+                showBookings(QrParser.fromCacheRows(cached), cacheNotice(detail));
             }
         });
+    }
+
+    // The API's own message, plus when the cached rows beneath it were taken.
+    // The wording stays the API's — this adds a timestamp, it does not invent a
+    // message. Null when nothing has ever been cached, so the server's message
+    // stands alone rather than promising rows that are not there.
+    private String cacheNotice(String detail) {
+        String when = bookingCache.lastRefreshedDisplay();
+
+        return when == null
+                ? detail
+                : detail + "\n" + getString(R.string.cache_last_updated, when);
     }
 
     // Renders the list and a status line. A non-null failureDetail means the

@@ -160,8 +160,10 @@
     <string name="action_node_list">All nodes</string>
     <string name="nodes_title">Microgrid nodes</string>
     <string name="nodes_none">No microgrid nodes are in service.</string>
-    <string name="nodes_last_updated">Showing saved data from %1$s</string>
-    <string name="nodes_offline">Showing saved data. The server could not be reached.</string>
+    <!-- Shared by every screen that falls back to the cache (node list, bookings),
+         not just the node list, so it is not named after one of them. -->
+    <string name="cache_last_updated">Showing saved data from %1$s</string>
+    <string name="cache_offline">Showing saved data. The server could not be reached.</string>
     <string name="node_row_capacity">%1$.1f kWh · %2$d battery slots</string>
     <string name="node_address">%1$s, %2$s</string>
     <string name="node_coordinates">%1$.4f, %2$.4f</string>

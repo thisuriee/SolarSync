@@ -57,6 +57,15 @@
             android:textAppearance="?attr/textAppearanceBodyMedium"
             android:visibility="gone" />
 
+        <!-- Shown only when the rows below came from the cache. -->
+        <TextView
+            android:id="@+id/textStale"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textAppearance="?attr/textAppearanceBodySmall"
+            android:visibility="gone" />
+
         <LinearLayout
             android:id="@+id/listBookings"
             android:layout_width="match_parent"

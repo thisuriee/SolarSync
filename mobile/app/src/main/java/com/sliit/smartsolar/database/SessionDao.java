@@ -75,13 +75,6 @@ public class SessionDao {
         return getString(DbContract.Session.USER_ID);
     }
 
-    // True when a token is present. Makes no judgement about whether it has
-    // expired — only the API decides that, and answers 401.
-    public boolean hasToken() {
-        String token = getToken();
-        return token != null && !token.isEmpty();
-    }
-
     // Clears the session row. Called on logout and whenever the API answers 401.
     public void clear() {
         helper.getWritableDatabase().delete(DbContract.Session.TABLE, null, null);

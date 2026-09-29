@@ -2,9 +2,9 @@
  * File:    QrParser.java
  * Author:  Imadh
  * Created: 2026-09-25
- * Purpose: Converts the QR screen's JSON into models, and models into cache
- *          rows. The only place the QR vertical reads a field name, so a
- *          contract change touches this file alone. No business logic — it
+ * Purpose: Converts the QR screen's JSON into models, and cached booking rows
+ *          back into models. The only place the QR vertical reads a field name,
+ *          so a contract change touches this file alone. No business logic — it
  *          never decides whether anything is valid.
  */
 package com.sliit.smartsolar.parsers;
@@ -15,13 +15,11 @@ import com.sliit.smartsolar.database.DbContract;
 import com.sliit.smartsolar.models.ApprovedBooking;
 import com.sliit.smartsolar.models.Reservation;
 import com.sliit.smartsolar.models.VerifiedTransfer;
-import com.sliit.smartsolar.network.DateUtils;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 public final class QrParser {
@@ -93,27 +91,6 @@ public final class QrParser {
         }
 
         return bookings;
-    }
-
-    // Maps bookings to cached_bookings rows, stamping the refresh time.
-    public static List<ContentValues> toCacheRows(List<ApprovedBooking> bookings) {
-        List<ContentValues> rows = new ArrayList<>();
-        String cachedAt = DateUtils.toUtcWire(new Date());
-
-        for (ApprovedBooking booking : bookings) {
-            ContentValues row = new ContentValues();
-            row.put(DbContract.CachedBookings.RESERVATION_ID, booking.reservationId);
-            row.put(DbContract.CachedBookings.STATION_ID, booking.stationId);
-            row.put(DbContract.CachedBookings.STATION_NAME, booking.stationName);
-            row.put(DbContract.CachedBookings.SLOT_START, booking.slotStartIso);
-            row.put(DbContract.CachedBookings.SLOT_END, booking.slotEndIso);
-            row.put(DbContract.CachedBookings.ENERGY_KWH, booking.energyKWh);
-            row.put(DbContract.CachedBookings.STATUS, booking.status);
-            row.put(DbContract.CachedBookings.CACHED_AT, cachedAt);
-            rows.add(row);
-        }
-
-        return rows;
     }
 
     // Maps cached rows back to bookings, for rendering when the API is unreachable.
