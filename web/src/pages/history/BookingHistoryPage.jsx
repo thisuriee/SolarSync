@@ -1,16 +1,20 @@
 /*
- * File:    ReservationsPage.jsx
- * Author:  Thisuri
- * Created: 2026-09-29
- * Purpose: Reservation management for staff (GET /reservations) — a paged list
- *          filtered by status, node, prosumer NIC and slot date, opening a detail
- *          dialog with the audit trail and the actions each role may take. Backoffice
- *          can also book on a prosumer's behalf. Every filter is sent to the API,
- *          which applies it in the Mongo query; nothing is filtered in the browser.
+ * File:    BookingHistoryPage.jsx
+ * Author:  Imadh
+ * Created: 2026-09-30
+ * Purpose: Booking history for staff (GET /reservations/history, docs/api-contract.md §5)
+ *          — a paged list narrowed by status, node, prosumer NIC, slot date and free
+ *          text, opening the same detail dialog management uses.
  *
- *          The list itself is drawn by the shared ReservationTable, so the approval
- *          queue on the dashboard and the booking history show a reservation exactly as
- *          this screen does.
+ *          Every filter and every page change is sent to the API as a query parameter and
+ *          applied in the Mongo query. Nothing is narrowed in the browser: a filter
+ *          applied here would be this page's answer rather than the server's, which is
+ *          exactly what the rubric warns against. The free-text term is the one thing this
+ *          screen has that reservation management does not — it matches a station name, a
+ *          prosumer NIC or a full reservation id, all resolved server-side.
+ *
+ *          The list and its loading and empty states come from the shared
+ *          ReservationTable, so a reservation looks the same as everywhere else.
  */
 import { useEffect, useMemo, useState } from "react";
 import Alert from "react-bootstrap/Alert";
@@ -20,16 +24,17 @@ import Form from "react-bootstrap/Form";
 import Pagination from "react-bootstrap/Pagination";
 import Row from "react-bootstrap/Row";
 import ReservationTable from "../../components/ReservationTable";
-import { useAuth } from "../../context/useAuth";
 import { getNodes } from "../../services/nodesApi";
-import { getReservations } from "../../services/reservationsApi";
-import { ROLES } from "../../utils/roles";
-import ReservationDetailModal from "./ReservationDetailModal";
-import ReservationFormModal from "./ReservationFormModal";
-import { RESERVATION_STATUSES, localDayToUtcIso } from "./reservationDisplay";
+import { getReservationHistory } from "../../services/reservationsApi";
+import ReservationDetailModal from "../reservations/ReservationDetailModal";
+import {
+  RESERVATION_STATUSES,
+  localDayToUtcIso,
+} from "../reservations/reservationDisplay";
 
 const PAGE_SIZE = 20;
 const EMPTY_FILTERS = {
+  q: "",
   status: "",
   nodeId: "",
   nic: "",
@@ -37,14 +42,20 @@ const EMPTY_FILTERS = {
   toDate: "",
 };
 
-// Lists reservations page by page. Both staff roles can view and cancel; only
-// Backoffice sees "New reservation" (booking on behalf) and only a Grid Operator
-// sees Approve / Reject in the detail dialog. Hiding a button is UX — the API's
-// [Authorize(Roles = ...)] plus the service re-check are the real rule.
-export default function ReservationsPage() {
-  const { user } = useAuth();
-  const isBackoffice = user.role === ROLES.BACKOFFICE;
+// Whether anything is actually narrowing the request, which decides the wording of the
+// empty state and of the total.
+function isFiltered(query) {
+  return Boolean(
+    query.q ||
+    query.status ||
+    query.nodeId ||
+    query.nic ||
+    query.fromDate ||
+    query.toDate,
+  );
+}
 
+export default function BookingHistoryPage() {
   // `query` is what was last sent to the API; `filters` is the unsubmitted form.
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [query, setQuery] = useState({ ...EMPTY_FILTERS, page: 1 });
@@ -55,10 +66,9 @@ export default function ReservationsPage() {
   const [success, setSuccess] = useState(null);
   const [nodes, setNodes] = useState([]);
   const [viewingId, setViewingId] = useState(null);
-  const [creating, setCreating] = useState(false);
 
-  // Loads the node list once, for the node filter and to show node names instead of
-  // raw ids. A failure here only degrades the display, so it is not shown as an error.
+  // The node list powers the node filter and the station names in the table. A failure
+  // only degrades the display, so it is not raised as an error.
   useEffect(() => {
     let cancelled = false;
     getNodes()
@@ -71,14 +81,16 @@ export default function ReservationsPage() {
     };
   }, []);
 
-  // Fetches the current page whenever the query changes or a reload is requested.
-  // `cancelled` drops stale responses so a slow reply cannot overwrite a newer one.
+  // Fetches the current page whenever the query changes. `cancelled` drops a stale reply
+  // so a slow earlier request cannot overwrite a newer one.
   useEffect(() => {
     let cancelled = false;
-    getReservations({
+
+    getReservationHistory({
       status: query.status,
       nodeId: query.nodeId,
       nic: query.nic,
+      q: query.q,
       from: localDayToUtcIso(query.fromDate),
       to: localDayToUtcIso(query.toDate, true),
       page: query.page,
@@ -93,6 +105,7 @@ export default function ReservationsPage() {
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
+
     return () => {
       cancelled = true;
     };
@@ -104,74 +117,71 @@ export default function ReservationsPage() {
     [nodes],
   );
 
-  // Changes the query (filters or page) and shows the spinner while it loads.
+  // Moves to another page. The page number lives in `query`, so this re-asks the API
+  // rather than slicing anything already fetched. The spinner is switched on here rather
+  // than inside the effect, so the fetch effect only reports its outcome.
   function changeQuery(changes) {
     setLoading(true);
     setError(null);
     setQuery((current) => ({ ...current, ...changes }));
   }
 
-  // Re-fetches the current page after an action that may move a row out of the filter.
-  function reload() {
-    setLoading(true);
-    setReloadKey((k) => k + 1);
-  }
-
-  // Filter submit: new filters always start again from page 1. The NIC is sent as
-  // typed; the API normalises it (IdentityFormat.NormaliseNic) before filtering.
-  function handleFilter(event) {
+  // A changed filter is a new question, so it starts again from page 1.
+  function handleApply(event) {
     event.preventDefault();
-    changeQuery({ ...filters, nic: filters.nic.trim(), page: 1 });
+    changeQuery({
+      ...filters,
+      q: filters.q.trim(),
+      nic: filters.nic.trim(),
+      page: 1,
+    });
   }
 
-  // Clears every filter and reloads from page 1.
-  function handleClear() {
+  function handleReset() {
     setFilters(EMPTY_FILTERS);
     changeQuery({ ...EMPTY_FILTERS, page: 1 });
   }
 
-  // Updates one field of the unsubmitted filter form.
   function setFilter(field, value) {
-    setFilters((f) => ({ ...f, [field]: value }));
+    setFilters((current) => ({ ...current, [field]: value }));
   }
 
-  // Called by the detail dialog after any accepted action (edit, cancel, approve,
-  // reject). The dialog stays open showing the new state; the list is refreshed.
-  function handleChanged(message) {
+  // Re-reads the current page after an action that may move a row out of the filter, and
+  // reports what the detail dialog did. The dialog sends the message; this page does not
+  // write one.
+  function reload(message) {
+    setLoading(true);
     setSuccess(message);
-    reload();
-  }
-
-  // Called by the create dialog after the API accepted the booking: opens its detail.
-  function handleCreated(created) {
-    setCreating(false);
-    setSuccess(
-      `Reservation created for ${created.prosumerNIC} — status ${created.status}.`,
-    );
-    setViewingId(created.id);
-    reload();
+    setReloadKey((k) => k + 1);
   }
 
   const items = result?.items ?? [];
   const totalPages = result?.totalPages ?? 0;
+  const filtered = isFiltered(query);
 
   return (
     <>
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <h1 className="h3 mb-0">Reservations</h1>
-        {isBackoffice && (
-          <Button onClick={() => setCreating(true)}>New reservation</Button>
-        )}
-      </div>
+      <h1 className="h3 mb-3">Booking history</h1>
 
-      <Form onSubmit={handleFilter} className="mb-3">
+      <Form onSubmit={handleApply} className="mb-3">
         <Row className="g-2 align-items-end">
+          <Col md={3}>
+            <Form.Label htmlFor="history-search" className="small mb-1">
+              Search
+            </Form.Label>
+            <Form.Control
+              id="history-search"
+              placeholder="Station, NIC or booking id"
+              value={filters.q}
+              onChange={(e) => setFilter("q", e.target.value)}
+            />
+          </Col>
           <Col md={2}>
-            <Form.Label htmlFor="filter-status" className="small mb-1">
+            <Form.Label htmlFor="history-status" className="small mb-1">
               Status
             </Form.Label>
             <Form.Select
-              id="filter-status"
+              id="history-status"
               value={filters.status}
               onChange={(e) => setFilter("status", e.target.value)}
             >
@@ -183,12 +193,12 @@ export default function ReservationsPage() {
               ))}
             </Form.Select>
           </Col>
-          <Col md={3}>
-            <Form.Label htmlFor="filter-node" className="small mb-1">
+          <Col md={2}>
+            <Form.Label htmlFor="history-node" className="small mb-1">
               Node
             </Form.Label>
             <Form.Select
-              id="filter-node"
+              id="history-node"
               value={filters.nodeId}
               onChange={(e) => setFilter("nodeId", e.target.value)}
             >
@@ -201,32 +211,32 @@ export default function ReservationsPage() {
             </Form.Select>
           </Col>
           <Col md={2}>
-            <Form.Label htmlFor="filter-nic" className="small mb-1">
+            <Form.Label htmlFor="history-nic" className="small mb-1">
               Prosumer NIC
             </Form.Label>
             <Form.Control
-              id="filter-nic"
+              id="history-nic"
               value={filters.nic}
               onChange={(e) => setFilter("nic", e.target.value)}
             />
           </Col>
-          <Col md={2}>
-            <Form.Label htmlFor="filter-from" className="small mb-1">
-              Slot from
+          <Col md={1}>
+            <Form.Label htmlFor="history-from" className="small mb-1">
+              From
             </Form.Label>
             <Form.Control
-              id="filter-from"
+              id="history-from"
               type="date"
               value={filters.fromDate}
               onChange={(e) => setFilter("fromDate", e.target.value)}
             />
           </Col>
-          <Col md={2}>
-            <Form.Label htmlFor="filter-to" className="small mb-1">
-              Slot to
+          <Col md={1}>
+            <Form.Label htmlFor="history-to" className="small mb-1">
+              To
             </Form.Label>
             <Form.Control
-              id="filter-to"
+              id="history-to"
               type="date"
               value={filters.toDate}
               onChange={(e) => setFilter("toDate", e.target.value)}
@@ -234,10 +244,10 @@ export default function ReservationsPage() {
           </Col>
           <Col xs="auto" className="d-flex gap-2">
             <Button type="submit" variant="outline-primary">
-              Filter
+              Apply
             </Button>
-            <Button variant="outline-secondary" onClick={handleClear}>
-              Clear
+            <Button variant="outline-secondary" onClick={handleReset}>
+              Reset
             </Button>
           </Col>
         </Row>
@@ -258,16 +268,22 @@ export default function ReservationsPage() {
         reservations={items}
         nodeNames={nodeNames}
         loading={loading}
+        emptyText={
+          filtered
+            ? "No bookings match these filters."
+            : "No bookings have been made yet."
+        }
         onSelect={setViewingId}
       />
 
-      {/* The count and the paging controls only mean anything once there is a page to
-          step through, so they are hidden on an empty or failed load. */}
+      {/* The count and the paging controls only mean anything once there is a page to step
+          through, so they are hidden on an empty or failed load. */}
       {!loading && items.length > 0 && (
         <div className="d-flex justify-content-between align-items-center">
           <span className="text-secondary small">
-            {result.totalCount} reservation{result.totalCount === 1 ? "" : "s"}{" "}
-            · page {result.page} of {totalPages}
+            {result.totalCount} booking{result.totalCount === 1 ? "" : "s"}
+            {filtered ? " match these filters" : ""} · page {result.page} of{" "}
+            {totalPages}
           </span>
           <Pagination className="mb-0">
             <Pagination.Prev
@@ -288,14 +304,7 @@ export default function ReservationsPage() {
           nodeNames={nodeNames}
           nodes={nodes}
           onClose={() => setViewingId(null)}
-          onChanged={handleChanged}
-        />
-      )}
-      {creating && (
-        <ReservationFormModal
-          nodes={nodes}
-          onClose={() => setCreating(false)}
-          onSaved={handleCreated}
+          onChanged={reload}
         />
       )}
     </>
