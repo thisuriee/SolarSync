@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  File:    bottom_nav_operator.xml
+  Author:  Thisuri
+  Created: 2026-10-04
+  Purpose: The Grid Operator's bottom-bar tabs. An operator has no bookings or
+           prosumer profile, so those tabs are left out rather than shown and
+           refused. utils/BottomNav maps each id to its screen.
+-->
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/nav_home"
+        android:icon="@drawable/ic_home"
+        android:title="@string/nav_home" />
+    <item
+        android:id="@+id/nav_map"
+        android:icon="@drawable/ic_map"
+        android:title="@string/nav_map" />
+    <item
+        android:id="@+id/nav_nodes"
+        android:icon="@drawable/ic_nodes"
+        android:title="@string/nav_nodes" />
+</menu>
