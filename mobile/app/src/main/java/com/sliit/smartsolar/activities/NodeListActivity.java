@@ -28,6 +28,7 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.sliit.smartsolar.R;
+import com.sliit.smartsolar.utils.BottomNav;
 import com.sliit.smartsolar.database.NodeCache;
 import com.sliit.smartsolar.models.Node;
 import com.sliit.smartsolar.network.ApiCallback;
@@ -54,6 +55,7 @@ public class NodeListActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_node_list);
+        BottomNav.attach(this, R.id.nav_nodes);
 
         cache = new NodeCache(this);
 
