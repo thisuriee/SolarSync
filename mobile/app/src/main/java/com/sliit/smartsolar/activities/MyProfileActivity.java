@@ -25,6 +25,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 import com.sliit.smartsolar.R;
+import com.sliit.smartsolar.utils.BottomNav;
 import com.sliit.smartsolar.database.SessionDao;
 import com.sliit.smartsolar.models.UserProfile;
 import com.sliit.smartsolar.network.ApiCallback;
@@ -63,6 +64,7 @@ public class MyProfileActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_my_profile);
+        BottomNav.attach(this, R.id.nav_profile);
 
         layoutFullName = findViewById(R.id.layoutFullName);
         layoutEmail = findViewById(R.id.layoutEmail);
