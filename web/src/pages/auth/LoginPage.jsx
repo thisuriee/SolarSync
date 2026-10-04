@@ -47,10 +47,13 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="d-flex justify-content-center align-items-center vh-100 px-3">
+    <div className="auth-screen d-flex justify-content-center align-items-center vh-100 px-3">
       <Card className="shadow-sm w-100" style={{ maxWidth: 400 }}>
         <Card.Body className="p-4">
-          <h1 className="h4 mb-1">SmartSolar</h1>
+          <h1 className="h4 mb-1 d-flex align-items-center gap-2">
+            <span className="brand-mark" aria-hidden="true" />
+            SmartSolar
+          </h1>
           <p className="text-secondary mb-4">Sign in to continue</p>
 
           {error && <Alert variant="danger">{error}</Alert>}

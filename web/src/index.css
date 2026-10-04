@@ -1,4 +1,355 @@
-/* Global styles on top of Bootstrap. Keep this small — prefer Bootstrap utility classes. */
+/*
+ * Global theme on top of Bootstrap. Presentation only — no screen logic lives here.
+ *
+ * The app runs in Bootstrap's dark colour mode (data-bs-theme="dark" on <html> in
+ * index.html), so every component — modals, tables, forms, alerts — is already dark.
+ * This file only re-points Bootstrap's own CSS variables at the SolarSync palette
+ * (near-black surfaces, solar-yellow accent) and styles the sidebar shell. Because it
+ * works through variables, the pages keep using plain Bootstrap classes and variants.
+ *
+ * The --ss-* tokens are the single palette; the Android app should reuse these values.
+ */
+[data-bs-theme='dark'] {
+  --ss-accent: #ffb800;
+  --ss-accent-rgb: 255, 184, 0;
+  --ss-accent-hover: #ffc933;
+  --ss-accent-active: #e6a600;
+  --ss-on-accent: #17140a;
+  --ss-bg: #0e0e10;
+  --ss-surface: #18181b;
+  --ss-surface-raised: #212125;
+  --ss-border: #2c2c33;
+
+  --bs-body-bg: var(--ss-bg);
+  --bs-body-bg-rgb: 14, 14, 16;
+  --bs-body-color: #e7e7ea;
+  --bs-body-color-rgb: 231, 231, 234;
+  --bs-secondary-color: rgba(231, 231, 234, 0.6);
+  --bs-secondary-bg: var(--ss-surface-raised);
+  --bs-tertiary-bg: var(--ss-surface);
+  --bs-border-color: var(--ss-border);
+  --bs-border-radius: 0.5rem;
+
+  --bs-primary: var(--ss-accent);
+  --bs-primary-rgb: var(--ss-accent-rgb);
+  --bs-primary-text-emphasis: #ffd666;
+  --bs-primary-bg-subtle: #2b2208;
+  --bs-primary-border-subtle: #6b4e00;
+  --bs-link-color: var(--ss-accent);
+  --bs-link-color-rgb: var(--ss-accent-rgb);
+  --bs-link-hover-color: var(--ss-accent-hover);
+  --bs-link-hover-color-rgb: 255, 201, 51;
+  --bs-focus-ring-color: rgba(var(--ss-accent-rgb), 0.25);
+}
+
 body {
-  background-color: #f5f6f8;
+  background-color: var(--ss-bg);
+}
+
+/* ---------- Buttons: yellow primary with dark text ---------- */
+
+.btn-primary {
+  --bs-btn-color: var(--ss-on-accent);
+  --bs-btn-bg: var(--ss-accent);
+  --bs-btn-border-color: var(--ss-accent);
+  --bs-btn-hover-color: var(--ss-on-accent);
+  --bs-btn-hover-bg: var(--ss-accent-hover);
+  --bs-btn-hover-border-color: var(--ss-accent-hover);
+  --bs-btn-focus-shadow-rgb: var(--ss-accent-rgb);
+  --bs-btn-active-color: var(--ss-on-accent);
+  --bs-btn-active-bg: var(--ss-accent-active);
+  --bs-btn-active-border-color: var(--ss-accent-active);
+  --bs-btn-disabled-color: var(--ss-on-accent);
+  --bs-btn-disabled-bg: var(--ss-accent);
+  --bs-btn-disabled-border-color: var(--ss-accent);
+  font-weight: 600;
+}
+
+.btn-outline-primary {
+  --bs-btn-color: var(--ss-accent);
+  --bs-btn-border-color: var(--ss-accent);
+  --bs-btn-hover-color: var(--ss-on-accent);
+  --bs-btn-hover-bg: var(--ss-accent);
+  --bs-btn-hover-border-color: var(--ss-accent);
+  --bs-btn-focus-shadow-rgb: var(--ss-accent-rgb);
+  --bs-btn-active-color: var(--ss-on-accent);
+  --bs-btn-active-bg: var(--ss-accent);
+  --bs-btn-active-border-color: var(--ss-accent);
+  --bs-btn-disabled-color: var(--ss-accent);
+  --bs-btn-disabled-border-color: var(--ss-accent);
+}
+
+/* Bootstrap's grey outline is too dim to read on a near-black page. */
+.btn-outline-secondary {
+  --bs-btn-color: #c9c9cf;
+  --bs-btn-border-color: #45454d;
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-bg: var(--ss-surface-raised);
+  --bs-btn-hover-border-color: #5a5a63;
+  --bs-btn-active-color: #fff;
+  --bs-btn-active-bg: var(--ss-surface-raised);
+  --bs-btn-active-border-color: #5a5a63;
+  --bs-btn-disabled-color: #7a7a82;
+  --bs-btn-disabled-border-color: #36363d;
+}
+
+/* ---------- Forms ---------- */
+
+.form-control:focus,
+.form-select:focus,
+.form-check-input:focus {
+  border-color: var(--ss-accent);
+  box-shadow: 0 0 0 0.2rem rgba(var(--ss-accent-rgb), 0.2);
+}
+
+.form-check-input:checked {
+  background-color: var(--ss-accent);
+  border-color: var(--ss-accent);
+}
+
+/* ---------- Surfaces: cards, modals, lists ---------- */
+
+.card {
+  --bs-card-bg: var(--ss-surface);
+  --bs-card-border-color: var(--ss-border);
+  --bs-card-border-radius: 0.875rem;
+  --bs-card-inner-border-radius: 0.875rem;
+  --bs-card-cap-bg: transparent;
+}
+
+.modal {
+  --bs-modal-bg: var(--ss-surface);
+  --bs-modal-border-color: var(--ss-border);
+  --bs-modal-header-border-color: var(--ss-border);
+  --bs-modal-footer-border-color: var(--ss-border);
+  --bs-modal-border-radius: 0.875rem;
+}
+
+.list-group {
+  --bs-list-group-bg: var(--ss-surface);
+  --bs-list-group-border-color: var(--ss-border);
+  --bs-list-group-action-hover-bg: var(--ss-surface-raised);
+  --bs-list-group-action-active-bg: var(--ss-surface-raised);
+  --bs-list-group-active-color: var(--ss-on-accent);
+  --bs-list-group-active-bg: var(--ss-accent);
+  --bs-list-group-active-border-color: var(--ss-accent);
+}
+
+.pagination {
+  --bs-pagination-bg: var(--ss-surface);
+  --bs-pagination-border-color: var(--ss-border);
+  --bs-pagination-hover-bg: var(--ss-surface-raised);
+  --bs-pagination-hover-border-color: var(--ss-border);
+  --bs-pagination-focus-box-shadow: 0 0 0 0.2rem rgba(var(--ss-accent-rgb), 0.2);
+  --bs-pagination-active-color: var(--ss-on-accent);
+  --bs-pagination-active-bg: var(--ss-accent);
+  --bs-pagination-active-border-color: var(--ss-accent);
+  --bs-pagination-disabled-bg: var(--ss-surface);
+  --bs-pagination-disabled-border-color: var(--ss-border);
+}
+
+/* ---------- Tables ---------- */
+
+.table {
+  --bs-table-bg: transparent;
+  --bs-table-border-color: var(--ss-border);
+  --bs-table-hover-bg: rgba(var(--ss-accent-rgb), 0.06);
+}
+
+.table > thead > tr > th {
+  color: var(--bs-secondary-color);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* A full-width list table sits in its own rounded panel, like a card. */
+.table-responsive {
+  margin-bottom: 1rem;
+  background-color: var(--ss-surface);
+  border: 1px solid var(--ss-border);
+  border-radius: 0.875rem;
+}
+
+.table-responsive > .table {
+  margin-bottom: 0;
+}
+
+/* nowrap: on a narrow screen the panel scrolls sideways rather than stacking each cell. */
+.table-responsive > .table > :not(caption) > * > * {
+  padding: 0.75rem 1rem;
+  white-space: nowrap;
+}
+
+.table-responsive > .table > tbody > tr:last-child > * {
+  border-bottom-width: 0;
+}
+
+/* ---------- Status badges: tinted pill, coloured text ---------- */
+
+.badge {
+  border-radius: 50rem;
+  padding: 0.4em 0.75em;
+  font-weight: 600;
+}
+
+.badge:not(.text-dark) {
+  --bs-bg-opacity: 0.16;
+}
+
+.badge.bg-success {
+  color: var(--bs-success-text-emphasis);
+}
+
+.badge.bg-warning {
+  color: var(--bs-warning-text-emphasis);
+}
+
+.badge.bg-danger {
+  color: var(--bs-danger-text-emphasis);
+}
+
+/* Primary is now yellow, which would make Completed look like Pending (warning), so
+   the primary badge borrows the info blue. !important only to beat Bootstrap's own
+   !important on .bg-primary. */
+.badge.bg-primary {
+  background-color: rgba(var(--bs-info-rgb), 0.16) !important;
+  color: var(--bs-info-text-emphasis);
+}
+
+.badge.bg-secondary,
+.badge.bg-light:not(.text-dark) {
+  color: #b4b4bc;
+}
+
+/* ---------- Brand mark (sidebar + login) ---------- */
+
+.brand-mark {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 1.375rem;
+  height: 1.375rem;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #ffe08a, var(--ss-accent) 70%);
+  box-shadow: 0 0 0 4px rgba(var(--ss-accent-rgb), 0.16);
+}
+
+/* ---------- Stat cards ---------- */
+
+.stat-card .card-subtitle {
+  font-size: 0.8125rem;
+}
+
+.stat-card .stat-value {
+  color: var(--ss-accent);
+}
+
+.stat-card .card-footer {
+  border-top-color: var(--ss-border);
+  font-size: 0.875rem;
+}
+
+/* ---------- Login ---------- */
+
+.auth-screen {
+  background: radial-gradient(
+    60rem 30rem at 50% -10%,
+    rgba(var(--ss-accent-rgb), 0.14),
+    transparent 70%
+  );
+}
+
+/* ---------- Signed-in shell (layouts/AppLayout.jsx) ---------- */
+
+/* Below lg the sidebar is an ordinary collapsing top bar. */
+.app-sidebar {
+  padding: 0.75rem 1rem;
+  background-color: var(--ss-surface);
+  border-bottom: 1px solid var(--ss-border);
+}
+
+.app-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  font-weight: 700;
+}
+
+.app-sidebar .app-nav .nav-link {
+  margin-bottom: 0.125rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  color: var(--bs-secondary-color);
+  font-size: 0.9375rem;
+}
+
+.app-sidebar .app-nav .nav-link:hover {
+  background-color: var(--ss-surface-raised);
+  color: var(--bs-body-color);
+}
+
+.app-sidebar .app-nav .nav-link.active {
+  background-color: rgba(var(--ss-accent-rgb), 0.14);
+  color: var(--ss-accent);
+  font-weight: 600;
+}
+
+.app-user {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--ss-border);
+}
+
+.app-main {
+  padding-top: 1.25rem;
+  padding-bottom: 2rem;
+}
+
+/* From lg up the same navbar becomes a fixed-width column on the left. */
+@media (min-width: 992px) {
+  .app-shell {
+    display: flex;
+    align-items: flex-start;
+    min-height: 100vh;
+  }
+
+  .app-sidebar {
+    position: sticky;
+    top: 0;
+    flex: 0 0 15rem;
+    flex-direction: column;
+    align-items: stretch;
+    height: 100vh;
+    padding: 1.25rem 0.875rem;
+    overflow-y: auto;
+    border-right: 1px solid var(--ss-border);
+    border-bottom: 0;
+  }
+
+  .app-sidebar .app-brand {
+    margin: 0 0 1.25rem;
+    padding: 0 0.5rem;
+  }
+
+  .app-sidebar .navbar-collapse {
+    flex-direction: column;
+    flex-grow: 1;
+    align-items: stretch;
+  }
+
+  .app-sidebar .app-nav {
+    flex-direction: column;
+  }
+
+  .app-sidebar .app-user {
+    margin-top: auto;
+  }
+
+  /* min-width: 0 lets a wide table scroll inside the page instead of stretching it. */
+  .app-main {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 1.75rem 2rem 2rem;
+  }
 }

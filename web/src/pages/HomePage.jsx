@@ -63,7 +63,7 @@ export default function HomePage() {
   const { user } = useAuth()
 
   return (
-    <div className="bg-white">
+    <div>
       {/* Hero. The one place the page uses colour heavily — a warm sunrise gradient,
           which is the only visual nod to what the system is about. */}
       <div className="text-white py-5" style={heroStyle}>
@@ -151,7 +151,7 @@ export default function HomePage() {
       </Container>
 
       {/* How a transfer works */}
-      <div className="border-top" style={{ backgroundColor: '#f5f6f8' }}>
+      <div className="border-top border-bottom bg-body-tertiary">
         <Container className="py-5">
           <h2 className="h3 mb-4">From booking to transfer</h2>
           <Row xs={1} sm={2} lg={4} className="g-4">
