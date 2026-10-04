@@ -31,6 +31,7 @@ import com.sliit.smartsolar.network.ApiCallback;
 import com.sliit.smartsolar.network.ApiClient;
 import com.sliit.smartsolar.network.DateUtils;
 import com.sliit.smartsolar.parsers.ReservationParser;
+import com.sliit.smartsolar.utils.BottomNav;
 import com.sliit.smartsolar.utils.ReservationFormat;
 import com.sliit.smartsolar.utils.SessionManager;
 
@@ -62,6 +63,7 @@ public class MyBookingsActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_my_bookings);
+        BottomNav.attach(this, R.id.nav_bookings);
 
         listBookings = findViewById(R.id.listBookings);
         textError = findViewById(R.id.textError);
