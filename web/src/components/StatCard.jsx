@@ -12,10 +12,10 @@ import Spinner from 'react-bootstrap/Spinner'
 // (shown as '—' so one failed call does not blank the whole home page).
 export default function StatCard({ label, value, to, linkText }) {
   return (
-    <Card className="h-100 shadow-sm">
+    <Card className="stat-card h-100 shadow-sm">
       <Card.Body>
         <Card.Subtitle className="text-secondary mb-2">{label}</Card.Subtitle>
-        <div className="display-6 fw-semibold">
+        <div className="stat-value display-6 fw-semibold">
           {value === undefined ? <Spinner animation="border" size="sm" /> : (value ?? '—')}
         </div>
       </Card.Body>

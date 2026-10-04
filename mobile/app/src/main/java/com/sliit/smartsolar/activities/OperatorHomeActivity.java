@@ -16,15 +16,18 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.sliit.smartsolar.R;
 import com.sliit.smartsolar.database.SessionDao;
+import com.sliit.smartsolar.utils.BottomNav;
 import com.sliit.smartsolar.utils.SessionManager;
 
 public class OperatorHomeActivity extends AppCompatActivity {
 
-    // Shows who is signed in (from the session row) and wires logout.
+    // Shows who is signed in (from the session row), wires the scan card and
+    // logout, and adds the bottom bar. The map and node list are the bar's tabs.
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_operator_home);
+        BottomNav.attach(this, R.id.nav_home);
 
         SessionDao session = new SessionDao(this);
         TextView textWelcome = findViewById(R.id.textWelcome);
@@ -33,10 +36,6 @@ public class OperatorHomeActivity extends AppCompatActivity {
         textWelcome.setText(getString(R.string.home_welcome, session.getFullName()));
         textRole.setText(R.string.home_operator_role);
 
-        findViewById(R.id.buttonNearbyNodes).setOnClickListener(v ->
-                startActivity(new Intent(this, NearbyNodesMapActivity.class)));
-        findViewById(R.id.buttonNodeList).setOnClickListener(v ->
-                startActivity(new Intent(this, NodeListActivity.class)));
         findViewById(R.id.buttonScanQr).setOnClickListener(v ->
                 startActivity(new Intent(this, QrScannerActivity.class)));
         findViewById(R.id.buttonLogout).setOnClickListener(v -> SessionManager.logout(this));

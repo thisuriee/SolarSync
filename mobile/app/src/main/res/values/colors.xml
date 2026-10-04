@@ -1,5 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  File:    colors.xml
+  Purpose: The SolarSync palette. The ss_* values are the same ones the web app
+           defines as its ss-* variables in web/src/index.css (near-black surfaces,
+           solar-yellow accent), so both clients read as one product. Screens
+           never name these directly: themes.xml maps them onto the Material
+           colour roles and layouts keep using ?attr/colorPrimary and friends.
+-->
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <!-- Accent -->
+    <color name="ss_accent">#FFB800</color>
+    <color name="ss_on_accent">#17140A</color>
+    <color name="ss_accent_container">#332A0D</color>
+    <color name="ss_on_accent_container">#FFD666</color>
+    <color name="ss_accent_halo">#29FFB800</color>
+
+    <!-- Surfaces, darkest to lightest -->
+    <color name="ss_bg">#0E0E10</color>
+    <color name="ss_surface_low">#141416</color>
+    <color name="ss_surface">#18181B</color>
+    <color name="ss_surface_raised">#212125</color>
+    <color name="ss_surface_highest">#2A2A30</color>
+
+    <!-- Text and lines -->
+    <color name="ss_text">#E7E7EA</color>
+    <color name="ss_text_muted">#A3A3AB</color>
+    <color name="ss_border">#2C2C33</color>
+    <color name="ss_outline">#5A5A63</color>
+
+    <!-- Supporting roles -->
+    <color name="ss_secondary">#E6C36A</color>
+    <color name="ss_on_secondary">#1F1A08</color>
+    <color name="ss_info">#6EDFF6</color>
+    <color name="ss_on_info">#06242B</color>
+    <color name="ss_info_container">#0B3640</color>
+    <color name="ss_on_info_container">#A8ECFA</color>
+    <color name="ss_error">#FF6B6B</color>
+    <color name="ss_on_error">#1A0606</color>
+    <color name="ss_error_container">#3A1212</color>
+    <color name="ss_on_error_container">#FFB4AB</color>
 </resources>

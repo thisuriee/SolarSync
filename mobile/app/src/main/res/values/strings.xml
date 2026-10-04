@@ -230,4 +230,16 @@
     <string name="history_prev">Previous</string>
     <string name="history_next">Next</string>
     <string name="history_empty_filtered">No bookings match these filters.</string>
+
+    <!-- Bottom bar and home shortcut cards (M3, mobile interfaces) -->
+    <string name="nav_home">Home</string>
+    <string name="nav_bookings">Bookings</string>
+    <string name="nav_nodes">Nodes</string>
+    <string name="nav_map">Map</string>
+    <string name="nav_profile">Profile</string>
+    <string name="home_book_hint">Find an open window at a hub</string>
+    <string name="home_dashboard_hint">Your booking figures and next slot</string>
+    <string name="home_qr_hint">Show the code for an approved booking</string>
+    <string name="home_nearby_hint">Hubs around you on the map</string>
+    <string name="home_scan_hint">Verify a booking and finalise the transfer</string>
 </resources>
