@@ -1,9 +1,97 @@
+<!--
+  File:    themes.xml
+  Purpose: The one app theme. Always dark (the parent is Material3.Dark, not
+           DayNight, so there is no values-night copy to keep in step) with the
+           SolarSync palette from colors.xml mapped onto the Material colour
+           roles. Every layout already reads its colours from these roles
+           (?attr/colorPrimary, ?attr/colorOnSurfaceVariant, ...), so the whole
+           app is restyled here without touching a screen. Presentation only.
+-->
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
-    <style name="Base.Theme.SmaerSolar" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+    <style name="Base.Theme.SmaerSolar" parent="Theme.Material3.Dark.NoActionBar">
+        <!-- Accent: filled buttons, text buttons, focused fields, section headers. -->
+        <item name="colorPrimary">@color/ss_accent</item>
+        <item name="colorOnPrimary">@color/ss_on_accent</item>
+        <item name="colorPrimaryContainer">@color/ss_accent_container</item>
+        <item name="colorOnPrimaryContainer">@color/ss_on_accent_container</item>
+        <item name="colorPrimaryInverse">#7A5900</item>
+
+        <!-- Secondary container is what tonal buttons and selected chips use. -->
+        <item name="colorSecondary">@color/ss_secondary</item>
+        <item name="colorOnSecondary">@color/ss_on_secondary</item>
+        <item name="colorSecondaryContainer">@color/ss_accent_container</item>
+        <item name="colorOnSecondaryContainer">@color/ss_on_accent_container</item>
+
+        <item name="colorTertiary">@color/ss_info</item>
+        <item name="colorOnTertiary">@color/ss_on_info</item>
+        <item name="colorTertiaryContainer">@color/ss_info_container</item>
+        <item name="colorOnTertiaryContainer">@color/ss_on_info_container</item>
+
+        <item name="colorError">@color/ss_error</item>
+        <item name="colorOnError">@color/ss_on_error</item>
+        <item name="colorErrorContainer">@color/ss_error_container</item>
+        <item name="colorOnErrorContainer">@color/ss_on_error_container</item>
+
+        <!-- Surfaces. The container steps are used by dialogs, menus and chips. -->
+        <item name="android:colorBackground">@color/ss_bg</item>
+        <item name="colorOnBackground">@color/ss_text</item>
+        <item name="colorSurface">@color/ss_bg</item>
+        <item name="colorOnSurface">@color/ss_text</item>
+        <item name="colorSurfaceVariant">@color/ss_surface_raised</item>
+        <item name="colorOnSurfaceVariant">@color/ss_text_muted</item>
+        <item name="colorSurfaceDim">@color/ss_bg</item>
+        <item name="colorSurfaceBright">@color/ss_surface_highest</item>
+        <item name="colorSurfaceContainerLowest">@color/ss_bg</item>
+        <item name="colorSurfaceContainerLow">@color/ss_surface_low</item>
+        <item name="colorSurfaceContainer">@color/ss_surface</item>
+        <item name="colorSurfaceContainerHigh">@color/ss_surface_raised</item>
+        <item name="colorSurfaceContainerHighest">@color/ss_surface_highest</item>
+        <item name="colorSurfaceInverse">@color/ss_text</item>
+        <item name="colorOnSurfaceInverse">@color/ss_surface</item>
+        <item name="colorOutline">@color/ss_outline</item>
+        <item name="colorOutlineVariant">@color/ss_border</item>
+
+        <!-- System bars blend into the page. -->
+        <item name="android:statusBarColor">@color/ss_bg</item>
+        <item name="android:navigationBarColor">@color/ss_bg</item>
+        <item name="android:windowLightStatusBar">false</item>
+
+        <!-- Cards: a slightly lighter panel with a thin border, as on the web. -->
+        <item name="materialCardViewStyle">@style/Widget.SmartSolar.Card</item>
+        <item name="materialCardViewOutlinedStyle">@style/Widget.SmartSolar.Card</item>
+
+        <!-- Text fields (and menus) get a softer corner than Material's 4dp. -->
+        <item name="shapeAppearanceCornerExtraSmall">@style/ShapeAppearance.SmartSolar.Field</item>
     </style>
 
     <style name="Theme.SmaerSolar" parent="Base.Theme.SmaerSolar" />
+
+    <style name="Widget.SmartSolar.Card" parent="Widget.Material3.CardView.Outlined">
+        <item name="cardBackgroundColor">@color/ss_surface</item>
+        <item name="strokeColor">@color/ss_border</item>
+        <item name="strokeWidth">1dp</item>
+        <item name="shapeAppearanceOverlay">@style/ShapeAppearance.SmartSolar.Card</item>
+    </style>
+
+    <!-- The bottom bar (layout/view_bottom_nav.xml): a flat panel, accent on the current tab. -->
+    <style name="Widget.SmartSolar.BottomNav" parent="Widget.Material3.BottomNavigationView">
+        <item name="backgroundTint">@color/ss_surface</item>
+        <item name="elevation">0dp</item>
+        <item name="itemIconTint">@color/bottom_nav_item</item>
+        <item name="itemTextColor">@color/bottom_nav_item</item>
+        <item name="itemActiveIndicatorStyle">@style/Widget.SmartSolar.BottomNav.Indicator</item>
+    </style>
+
+    <style name="Widget.SmartSolar.BottomNav.Indicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
+        <item name="android:color">@color/ss_accent_container</item>
+    </style>
+
+    <style name="ShapeAppearance.SmartSolar.Card" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">14dp</item>
+    </style>
+
+    <style name="ShapeAppearance.SmartSolar.Field" parent="ShapeAppearance.Material3.Corner.ExtraSmall">
+        <item name="cornerSize">10dp</item>
+    </style>
 </resources>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  File:    brand_mark.xml
+  Author:  Thisuri
+  Created: 2026-10-04
+  Purpose: The SolarSync sun mark shown beside the app title: a yellow disc with
+           a faint halo, the same mark the web sidebar and login use.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <size
+        android:width="28dp"
+        android:height="28dp" />
+    <solid android:color="@color/ss_accent" />
+    <stroke
+        android:width="4dp"
+        android:color="@color/ss_accent_halo" />
+</shape>
