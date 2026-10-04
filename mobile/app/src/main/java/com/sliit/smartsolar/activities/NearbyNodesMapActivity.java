@@ -49,6 +49,7 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.CancellationTokenSource;
 import com.google.android.material.chip.ChipGroup;
 import com.sliit.smartsolar.R;
+import com.sliit.smartsolar.utils.BottomNav;
 import com.sliit.smartsolar.models.Node;
 import com.sliit.smartsolar.network.ApiCallback;
 import com.sliit.smartsolar.network.ApiClient;
@@ -97,6 +98,7 @@ public class NearbyNodesMapActivity extends AppCompatActivity implements OnMapRe
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_nearby_nodes_map);
+        BottomNav.attach(this, R.id.nav_map);
 
         progress = findViewById(R.id.progress);
         textStatus = findViewById(R.id.textStatus);
