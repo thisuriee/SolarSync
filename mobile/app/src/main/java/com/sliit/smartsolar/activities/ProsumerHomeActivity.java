@@ -16,28 +16,25 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.sliit.smartsolar.R;
 import com.sliit.smartsolar.database.SessionDao;
+import com.sliit.smartsolar.utils.BottomNav;
 import com.sliit.smartsolar.utils.SessionManager;
 
 public class ProsumerHomeActivity extends AppCompatActivity {
 
-    // Wires My profile, the reservation entry points (M3) and logout.
+    // Wires the shortcut cards and logout, and adds the bottom bar. My bookings,
+    // All nodes and My profile are reached from the bar's tabs, not from here.
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_prosumer_home);
+        BottomNav.attach(this, R.id.nav_home);
 
         findViewById(R.id.buttonDashboard).setOnClickListener(v ->
                 startActivity(new Intent(this, ProsumerDashboardActivity.class)));
-        findViewById(R.id.buttonMyProfile).setOnClickListener(v ->
-                startActivity(new Intent(this, MyProfileActivity.class)));
         findViewById(R.id.buttonBookSlot).setOnClickListener(v ->
                 startActivity(new Intent(this, SlotSearchActivity.class)));
-        findViewById(R.id.buttonMyBookings).setOnClickListener(v ->
-                startActivity(new Intent(this, MyBookingsActivity.class)));
         findViewById(R.id.buttonNearbyNodes).setOnClickListener(v ->
                 startActivity(new Intent(this, NearbyNodesMapActivity.class)));
-        findViewById(R.id.buttonNodeList).setOnClickListener(v ->
-                startActivity(new Intent(this, NodeListActivity.class)));
         findViewById(R.id.buttonMyQr).setOnClickListener(v ->
                 startActivity(new Intent(this, QrDisplayActivity.class)));
         findViewById(R.id.buttonLogout).setOnClickListener(v -> SessionManager.logout(this));
